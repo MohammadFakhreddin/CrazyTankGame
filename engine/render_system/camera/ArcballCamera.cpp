@@ -3,6 +3,7 @@
 #include "LogicalDevice.hpp"
 #include "UI.hpp"
 #include "BedrockLog.hpp"
+#include "BedrockMath.hpp"
 
 namespace MFA
 {

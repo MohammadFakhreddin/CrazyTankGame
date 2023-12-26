@@ -1,7 +1,11 @@
 #include "BedrockLog.hpp"
+#include "CrazyTankGameApp.hpp"
 
 int main()
 {
-    MFA_LOG_INFO("Legendary tank game starts from here");
+	{
+		CrazyTankGameApp app{};
+		app.Run();
+	}
 	return 0;
 }
