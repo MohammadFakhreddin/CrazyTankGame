@@ -1,5 +1,3 @@
-<img src="examples/meshviewer.png" style="width:512px">
-
 # How to install dependencies
 
 You need to install vulkan and sdl. 
@@ -22,6 +20,9 @@ To install sdl2:
 vcpkg install sdl2[vulkan] --triplet x64-windows
 ```
 ```For linux replace the windows with linux```
+```
+vcpkg install sdl2[vulkan]
+```
 
 Add vcpkg to toochain and then run 
 ```
