@@ -108,6 +108,14 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 		errorTexture = gpuTexture;
     }
+
+	// auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/submarine/scene.gltf"));
+
+	// auto submarineRenderer = std::make_shared<MeshRenderer>(
+	// 	shadingPipeline1,
+	// 	subMarineModel,
+	// 	errorTexture
+	// );
 }
 
 //------------------------------------------------------------------------------------------------------

@@ -161,7 +161,7 @@ int main()
 
 		auto errorTexture = CreateErrorTexture();
 
-		auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/submarine/scene.gltf"));
+		auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_1.glb"));
 
 		auto submarineRenderer = std::make_shared<MeshRenderer>(
 			shadingPipeline1,
