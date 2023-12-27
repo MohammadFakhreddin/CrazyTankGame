@@ -279,7 +279,7 @@ namespace MFA::RenderBackend
         int const posX, int const posY
     )
     {
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK);
         auto * window = SDL_CreateWindow(
             windowName.c_str(),
             posX,

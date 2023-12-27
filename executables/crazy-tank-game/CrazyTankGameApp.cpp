@@ -31,6 +31,8 @@ CrazyTankGameApp::CrazyTankGameApp()
     device = LogicalDevice::Instantiate(params);
 	assert(device->IsValid() == true);
 
+	if (SDL_JoystickOpen(0) != nullptr) SDL_JoystickEventState(SDL_ENABLE);
+
     device->SDL_EventSignal.Register([&](SDL_Event* event)->void
 		{
 			OnSDL_Event(event);
@@ -208,16 +210,16 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 	ui->Update();
 
 	{// Player matrix
-		auto const inputMagnitude = glm::length(inputAxis);
+		float const inputMagnitude = glm::length(inputAxis);
 
 		if (inputMagnitude > glm::epsilon<float>())
 		{
-			auto inputVector = inputAxis / inputMagnitude;
-			playerPosition += inputVector * playerSpeed * deltaTimeSec;
+			playerAngle = fmodf(playerAngle - inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
+			glm::vec3 playerDirection{ sinf(playerAngle), 0.f, cosf(playerAngle) };
+			playerPosition += playerDirection * inputAxis.y * playerSpeed * deltaTimeSec;
 		}
-
 		auto const translateMatrix = Math::Translate(playerPosition);
-		auto const rotationMatrix = glm::toMat4(playerRotation);
+		auto const rotationMatrix = glm::toMat4(glm::angleAxis(playerAngle, glm::vec3{ 0.f, 1.f, 0.f }));
 		auto const scaleMatrix = Math::Scale(playerScale);
 		playerMatrix = translateMatrix * rotationMatrix * scaleMatrix;
 	}
@@ -277,11 +279,11 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		
 		if (event->key.keysym.sym == SDLK_UP)
 		{
-			inputAxis.z += -1.0f * modifier;
+			inputAxis.y += -1.0f * modifier;
 		}
 		else if (event->key.keysym.sym == SDLK_DOWN)
 		{
-			inputAxis.z += +1.0f * modifier;
+			inputAxis.y += +1.0f * modifier;
 		}
 		else if (event->key.keysym.sym == SDLK_RIGHT)
 		{
@@ -293,7 +295,37 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		}
 
 		inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
-		inputAxis.z = std::clamp(inputAxis.z, -1.0f, 1.0f);
+		inputAxis.y = std::clamp(inputAxis.y, -1.0f, 1.0f);
+	}
+
+	if (event->type == SDL_JOYAXISMOTION) {
+		constexpr Sint16 JOYSTICK_DEADZONE = 8000;
+		if (event->jaxis.axis == 0) {
+			if (event->jaxis.value < -JOYSTICK_DEADZONE) {
+				inputAxis.x = 1.0;
+			}
+			else if (event->jaxis.value > JOYSTICK_DEADZONE) {
+				inputAxis.x = -1.0;
+			}
+			else {
+				inputAxis.x = 0.0;
+			}
+		}
+		else if (event->jaxis.axis == 1) {
+			if (event->jaxis.value < -JOYSTICK_DEADZONE) {
+				inputAxis.y = -1.0;
+			}
+			else if (event->jaxis.value > JOYSTICK_DEADZONE) {
+				inputAxis.y = 1.0;
+			}
+			else {
+				inputAxis.y = 0.0;
+			}
+		}
+	}
+
+	if (event->type == SDL_JOYBUTTONDOWN) {
+	
 	}
 }
 

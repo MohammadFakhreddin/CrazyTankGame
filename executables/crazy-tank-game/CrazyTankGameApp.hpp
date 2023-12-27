@@ -8,6 +8,7 @@
 #include "utils/MeshRenderer.hpp"
 
 #include <memory>
+#include <thread>
 
 class CrazyTankGameApp
 {
@@ -60,9 +61,12 @@ private:
     // Temporary
     std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
 
-    glm::vec3 inputAxis{};
+    glm::vec2 inputAxis{};
 
     float playerSpeed = 10.0f;
+    float playerAngularSpeed = glm::pi<float>();
+
+    float playerAngle = 0.f;
 
     glm::vec3 playerPosition{0.0f, 0.0f, 0.0f};
     glm::vec3 playerScale{0.1f, 0.1f, 0.1f};
