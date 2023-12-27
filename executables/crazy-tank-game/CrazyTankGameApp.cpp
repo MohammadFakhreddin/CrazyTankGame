@@ -1,10 +1,11 @@
 #include "CrazyTankGameApp.hpp"
 
 #include "camera/ObserverCamera.hpp"
+#include "camera/ArcballCamera.hpp"
+#include "ImportTexture.hpp"
+#include "BedrockMath.hpp"
 
 #include <omp.h>
-
-#include "ImportTexture.hpp"
 
 using namespace MFA;
 
@@ -36,7 +37,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 		}
 	);
 
-    camera = std::make_unique<ObserverCamera>();
+    camera = std::make_unique<ArcballCamera>();
 
 	swapChainResource = std::make_shared<SwapChainRenderResource>();
 	depthResource = std::make_shared<DepthRenderResource>();
@@ -109,19 +110,21 @@ CrazyTankGameApp::CrazyTankGameApp()
 		errorTexture = gpuTexture;
     }
 
-	// auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/submarine/scene.gltf"));
-
-	// auto submarineRenderer = std::make_shared<MeshRenderer>(
-	// 	shadingPipeline1,
-	// 	subMarineModel,
-	// 	errorTexture
-	// );
+	{// Tank model
+		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_1.glb"));
+		tankRenderer = std::make_unique<MeshRenderer>(
+			shadingPipeline,
+			tankCpuModel,
+			errorTexture
+		);
+	}
 }
 
 //------------------------------------------------------------------------------------------------------
 
 CrazyTankGameApp::~CrazyTankGameApp()
 {
+	tankRenderer.reset();
 	errorTexture.reset();
 	shadingPipeline.reset();
 	defaultSampler.reset();
@@ -142,7 +145,7 @@ CrazyTankGameApp::~CrazyTankGameApp()
 
 void CrazyTankGameApp::Run()
 {
-	const uint32_t MinDeltaTimeMs = 1000 / 60;
+	const uint32_t MinDeltaTimeMs = 1000 / 120;
 
 	SDL_GL_SetSwapInterval(0);
 	SDL_Event e;
@@ -203,6 +206,21 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 	}
 
 	ui->Update();
+
+	{// Player matrix
+		auto const inputMagnitude = glm::length(inputAxis);
+
+		if (inputMagnitude > glm::epsilon<float>())
+		{
+			auto inputVector = inputAxis / inputMagnitude;
+			playerPosition += inputVector * playerSpeed * deltaTimeSec;
+		}
+
+		auto const translateMatrix = Math::Translate(playerPosition);
+		auto const rotationMatrix = glm::toMat4(playerRotation);
+		auto const scaleMatrix = Math::Scale(playerScale);
+		playerMatrix = translateMatrix * rotationMatrix * scaleMatrix;
+	}
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -224,7 +242,7 @@ void CrazyTankGameApp::Render(MFA::RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	// TODO: Render here
+	tankRenderer->Render(recordState, {playerMatrix});
 
 	ui->Render(recordState, _deltaTimeSec);
 
@@ -239,12 +257,44 @@ void CrazyTankGameApp::Render(MFA::RT::CommandRecordState& recordState)
 
 void CrazyTankGameApp::OnUI(float deltaTimeSec)
 {
+	ui->BeginWindow("Window");
+	ImGui::Text("Framerate: %f", 1.0f / deltaTimeSec);
+	ui->EndWindow();
 }
 
 //------------------------------------------------------------------------------------------------------
 
 void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 {
+	if (UI::Instance != nullptr && UI::Instance->HasFocus() == true)
+	{
+		return;
+	}
+	
+	if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
+	{
+		auto modifier = event->type == SDL_KEYDOWN ? 1.0f : -1.0f;
+		
+		if (event->key.keysym.sym == SDLK_UP)
+		{
+			inputAxis.z += -1.0f * modifier;
+		}
+		else if (event->key.keysym.sym == SDLK_DOWN)
+		{
+			inputAxis.z += +1.0f * modifier;
+		}
+		else if (event->key.keysym.sym == SDLK_RIGHT)
+		{
+			inputAxis.x += -1.0f * modifier;
+		}
+		else if (event->key.keysym.sym == SDLK_LEFT)
+		{
+			inputAxis.x += 1.0f * modifier;
+		}
+
+		inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
+		inputAxis.z = std::clamp(inputAxis.z, -1.0f, 1.0f);
+	}
 }
 
 //------------------------------------------------------------------------------------------------------

@@ -43,16 +43,16 @@ PSOut main(PSIn input) {
 
     
     // float3 lightDir = float3(-1.0f, -1.0f, -1.0f);
-    float3 lightDir = float3(1.0f, 1.0f, 1.0f);
+    float3 lightDir = float3(1.0f, -1.0f, 1.0f);
     // float ambient = 0.25f;
     float ambient = 0.25f;
 
-    float dot = dot(normalize(-lightDir), normalize(input.worldNormal));
-    float3 dirLight = max(dot, 0.0f) * color;
+    float dotProd = dot(normalize(-lightDir), normalize(input.worldNormal));
+    float3 dirLight = max(dotProd, 0.0f) * color;
     float3 color2 = dirLight + ambient * color;
     // color = ambient * color;
 
-    color2 = ApplyExposureToneMapping(color2);
+    // color2 = ApplyExposureToneMapping(color2);
     // Gamma correct
     color2 = ApplyGammaCorrection(color2); 
 

@@ -144,7 +144,7 @@ namespace MFA
 		_right = glm::normalize(glm::cross(_forward, Math::UpVec3));
 		_up = glm::normalize(glm::cross(_forward, _right));
 
-		_viewMat = glm::lookAt(_position, _target, Math::UpVec3);
+		_viewMat = glm::lookAt(_position, _target, _up);
 	}
 
 	//-------------------------------------------------------------------------------------------------

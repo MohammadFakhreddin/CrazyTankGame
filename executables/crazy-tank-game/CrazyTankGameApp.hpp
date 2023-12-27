@@ -5,6 +5,7 @@
 #include "UI.hpp"
 #include "pipeline/FlatShadingPipeline.hpp"
 #include "camera/PerspectiveCamera.hpp"
+#include "utils/MeshRenderer.hpp"
 
 #include <memory>
 
@@ -55,4 +56,16 @@ private:
 
     std::shared_ptr<MFA::RT::SamplerGroup> defaultSampler{};
     std::shared_ptr<MFA::RT::GpuTexture> errorTexture{};
+
+    // Temporary
+    std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
+
+    glm::vec3 inputAxis{};
+
+    float playerSpeed = 10.0f;
+
+    glm::vec3 playerPosition{0.0f, 0.0f, 0.0f};
+    glm::vec3 playerScale{0.1f, 0.1f, 0.1f};
+    glm::quat playerRotation = glm::identity<glm::quat>();
+    glm::mat4 playerMatrix = glm::identity<glm::mat3>();
 };
