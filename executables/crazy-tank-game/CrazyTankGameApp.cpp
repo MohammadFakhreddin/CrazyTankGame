@@ -214,7 +214,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 		if (inputMagnitude > glm::epsilon<float>())
 		{
-			playerAngle = fmodf(playerAngle - inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
+			playerAngle = fmodf(playerAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
 			glm::vec3 playerDirection{ sinf(playerAngle), 0.f, cosf(playerAngle) };
 			playerPosition += playerDirection * inputAxis.y * playerSpeed * deltaTimeSec;
 		}
@@ -279,19 +279,19 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		
 		if (event->key.keysym.sym == SDLK_UP)
 		{
-			inputAxis.y += -1.0f * modifier;
+			inputAxis.y -= modifier;
 		}
 		else if (event->key.keysym.sym == SDLK_DOWN)
 		{
-			inputAxis.y += +1.0f * modifier;
-		}
-		else if (event->key.keysym.sym == SDLK_RIGHT)
-		{
-			inputAxis.x += -1.0f * modifier;
+			inputAxis.y += modifier;
 		}
 		else if (event->key.keysym.sym == SDLK_LEFT)
 		{
-			inputAxis.x += 1.0f * modifier;
+			inputAxis.x -= modifier;
+		}
+		else if (event->key.keysym.sym == SDLK_RIGHT)
+		{
+			inputAxis.x += modifier;
 		}
 
 		inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
@@ -299,33 +299,36 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 	}
 
 	if (event->type == SDL_JOYAXISMOTION) {
-		constexpr Sint16 JOYSTICK_DEADZONE = 8000;
+		const auto process_axis = [](Sint16 joyAxisValue) -> float {
+			constexpr Sint16 JOYSTICK_DEADZONE = 8000;
+			return joyAxisValue < -JOYSTICK_DEADZONE ? -1.0 : joyAxisValue > JOYSTICK_DEADZONE ? 1.0 : 0.0;
+			};
 		if (event->jaxis.axis == 0) {
-			if (event->jaxis.value < -JOYSTICK_DEADZONE) {
-				inputAxis.x = 1.0;
-			}
-			else if (event->jaxis.value > JOYSTICK_DEADZONE) {
-				inputAxis.x = -1.0;
-			}
-			else {
-				inputAxis.x = 0.0;
-			}
+			inputAxis.x = process_axis(event->jaxis.value);
 		}
 		else if (event->jaxis.axis == 1) {
-			if (event->jaxis.value < -JOYSTICK_DEADZONE) {
-				inputAxis.y = -1.0;
-			}
-			else if (event->jaxis.value > JOYSTICK_DEADZONE) {
-				inputAxis.y = 1.0;
-			}
-			else {
-				inputAxis.y = 0.0;
-			}
+			inputAxis.y = process_axis(event->jaxis.value);
 		}
 	}
 
-	if (event->type == SDL_JOYBUTTONDOWN) {
-	
+	if (event->type == SDL_JOYBUTTONDOWN || event->type == SDL_JOYBUTTONUP) {
+		const bool is_button_released = event->type == SDL_JOYBUTTONUP;
+		if (event->jbutton.button == 1 /* BUTTON A */) {
+			if (is_button_released) {
+				MFA_LOG_DEBUG("A released");
+			}
+			else {
+				MFA_LOG_DEBUG("A pressed");
+			}
+		}
+		else if (event->jbutton.button == 2 /* BUTTON B */) {
+			if (is_button_released) {
+				MFA_LOG_DEBUG("B released");
+			}
+			else {
+				MFA_LOG_DEBUG("B pressed");
+			}
+		}
 	}
 }
 
