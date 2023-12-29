@@ -1,10 +1,13 @@
 #pragma once
 
+#include "BedrockMemory.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "BedrockMemory.hpp"
+#include <string>
 
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 
 namespace MFA::Asset::GLTF
@@ -117,9 +120,117 @@ namespace MFA::Asset::GLTF
 		std::vector<Primitive*> const& FindPrimitives(AlphaMode alphaMode) const;
 	};
 
+	struct Node
+    {
+        friend class Mesh;
+
+        explicit Node();
+
+        explicit Node(Node && other) noexcept;
+
+        explicit Node(Node const & other) noexcept;
+
+        Node & operator=(Node && other) noexcept;
+
+        Node & operator=(Node const & other) noexcept;
+        
+        int subMeshIndex = -1;
+        std::vector<int> children{};
+        float transform[16]{
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };                       // Preset animation value
+        float rotation[4]{ 0.0f, 0.0f, 0.0f, 1.0f };     // x, y, z, w
+        float scale[3]{ 1.0f, 1.0f, 1.0f };
+        float translate[3]{ 0.0f, 0.0f, 0.0f };
+        int parent = -1;
+        int skin = -1;
+
+        [[nodiscard]]
+        bool hasSubMesh() const noexcept;
+
+        [[nodiscard]]
+        bool HasParent() const noexcept;
+
+    };
+
+    struct Skin
+    {
+        std::vector<int> joints{};
+        std::vector<glm::mat4> inverseBindMatrices{};
+        int skeletonRootNode = -1;
+    };
+
+    struct Animation
+    {
+
+        enum class Path
+        {
+            Invalid,
+            Translation,
+            Scale,
+            Rotation
+        };
+
+        enum class Interpolation
+        {
+            Invalid,
+            Linear,                         // We only support linear for now
+            Step,
+            CubicSpline
+        };
+
+        std::string name{};
+
+        struct Sampler
+        {
+            struct InputAndOutput
+            {
+                float input = -1;                           // Input time (Probably in seconds)
+                float output[4]{ 0.0f, 0.0f, 0.0f, 0.0f };  // Output can be from 3 to 4 
+            };
+            Interpolation interpolation{};
+            std::vector<InputAndOutput> inputAndOutput{};
+        };
+        std::vector<Sampler> samplers{};
+
+        struct Channel
+        {
+            Path path = Path::Invalid;
+            uint32_t nodeIndex = 0;         // We might need to store translation, rotation and scale separately
+            uint32_t samplerIndex = 0;
+        };
+        std::vector<Channel> channels{};
+
+        float startTime = -1.0f;
+        float endTime = -1.0f;
+        float animationDuration{};         // We should track currentTime somewhere else
+    };
+
 	struct MeshData
 	{
-		std::vector<SubMesh> subMeshes{};
+        std::vector<SubMesh> subMeshes{};
+        std::vector<Node> nodes{};
+        std::vector<Skin> skins{};
+        std::vector<Animation> animations{};
+        std::vector<uint32_t> rootNodes{};         // Nodes that have no parent
+
+        // We could do this with a T-Pose for more accurate result
+        bool hasPositionMinMax = false;
+
+        float positionMin[3]{
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max(),
+            std::numeric_limits<float>::max()
+        };
+
+        float positionMax[3]{
+            std::numeric_limits<float>::min(),
+            std::numeric_limits<float>::min(),
+            std::numeric_limits<float>::min()
+        };
 
 		[[nodiscard]]
 		bool IsValid() const;
@@ -156,6 +267,14 @@ namespace MFA::Asset::GLTF
 			uint32_t indicesCount,
 			Index * indices
 		);
+
+		[[nodiscard]]
+        Node & InsertNode() const;
+
+        [[nodiscard]]
+        Skin & InsertSkin() const;
+
+        void InsertAnimation(Animation const & animation) const;
 
 		[[nodiscard]]
 		bool IsValid() const;

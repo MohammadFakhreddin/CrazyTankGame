@@ -8,6 +8,7 @@
 #include "utils/MeshRenderer.hpp"
 
 #include <memory>
+#include <thread>
 
 class CrazyTankGameApp
 {
