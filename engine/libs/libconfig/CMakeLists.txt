@@ -17,6 +17,10 @@ list(
 
     "${CMAKE_CURRENT_SOURCE_DIR}/LibConfig.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/LibConfig.cpp"
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/miniaudio/miniaudio.h"
+
+
 )
 
 set(LIBRARY_NAME "LibConfig")
@@ -25,4 +29,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/stb_image")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/nlohmann")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/tiny_gltf_loader")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/tiny_obj_loader")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/miniaudio")
+
 

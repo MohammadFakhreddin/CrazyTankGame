@@ -4,6 +4,7 @@
 #include "camera/ArcballCamera.hpp"
 #include "ImportTexture.hpp"
 #include "BedrockMath.hpp"
+#include "miniaudio/miniaudio.h"
 
 #include <omp.h>
 
@@ -277,6 +278,7 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 	{
 		auto modifier = event->type == SDL_KEYDOWN ? 1.0f : -1.0f;
 		
+		// Tank Moving Sound
 		if (event->key.keysym.sym == SDLK_UP)
 		{
 			inputAxis.y -= modifier;
@@ -311,6 +313,7 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		}
 	}
 
+	// Primary shot, secondary shot, ricochet, explosion, 
 	if (event->type == SDL_JOYBUTTONDOWN || event->type == SDL_JOYBUTTONUP) {
 		const bool is_button_released = event->type == SDL_JOYBUTTONUP;
 		if (event->jbutton.button == 1 /* BUTTON A */) {

@@ -15,6 +15,7 @@
 #include "stb_image_resize.h"
 #include "stb_image_write.h"
 #include "tiny_gltf_loader.h"
+#include "miniaudio.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
