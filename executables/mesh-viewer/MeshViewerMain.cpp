@@ -130,16 +130,6 @@ int main()
 			}
 		);
 
-		auto const shadingPipeline2 = std::make_shared<FlatShadingPipeline>(
-			displayRenderPass,
-			cameraBuffer,
-			defaultSampler,
-			FlatShadingPipeline::Params{
-				.maxSets = 100,
-				.cullModeFlags = VK_CULL_MODE_FRONT_BIT,
-			}
-		);
-
 		auto const wireFramePipeline = std::make_shared<FlatShadingPipeline>(
 			displayRenderPass,
 			cameraBuffer,
@@ -161,7 +151,7 @@ int main()
 
 		auto errorTexture = CreateErrorTexture();
 
-		auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_1.glb"));
+		auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_0.glb"));
 
 		auto submarineRenderer = std::make_shared<MeshRenderer>(
 			shadingPipeline1,

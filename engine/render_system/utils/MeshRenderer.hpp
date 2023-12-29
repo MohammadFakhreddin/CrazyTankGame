@@ -44,6 +44,18 @@ namespace MFA
 
         void GenerateCollisionTriangles(AS::GLTF::Model const& model);
 
+        void DrawSubMesh(
+            RT::CommandRecordState& recordState,
+            int subMeshIdx,
+            glm::mat4 const & transform
+        ) const;
+
+        void DrawNode(
+            RT::CommandRecordState& recordState,
+            Asset::GLTF::Node const& node, 
+            glm::mat4 const& parentTransform
+        ) const;
+
         std::shared_ptr<FlatShadingPipeline> _pipeline{};
 
         std::shared_ptr<AS::GLTF::MeshData> _meshData{};
@@ -54,7 +66,7 @@ namespace MFA
         std::shared_ptr<RT::BufferAndMemory> _indicesBuffer{};
         std::vector<std::shared_ptr<RT::GpuTexture>> _textures{};
         std::vector<std::shared_ptr<RT::BufferGroup>> _materials{};
-        std::vector<RT::DescriptorSetGroup> _descriptorSets;
+        std::vector<std::vector<RT::DescriptorSetGroup>> _descriptorSets;
 
         std::vector<CollisionTriangle> _collisionTriangles{};
 

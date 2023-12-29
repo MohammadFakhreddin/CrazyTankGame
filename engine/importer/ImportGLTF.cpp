@@ -3,6 +3,7 @@
 #include "AssetTexture.hpp"
 #include "ImportTexture.hpp"
 #include "BedrockAssert.hpp"
+#include "BedrockMath.hpp"
 
 #include "json.hpp"
 #include "stb_image.h"
@@ -182,32 +183,27 @@ namespace MFA::Importer
                 if (gltfNode.translation.empty() == false)
                 {
                     MFA_ASSERT(gltfNode.translation.size() == 3);
-                    node.translate[0] = static_cast<float>(gltfNode.translation[0]);
-                    node.translate[1] = static_cast<float>(gltfNode.translation[1]);
-                    node.translate[2] = static_cast<float>(gltfNode.translation[2]);
+                    Memory::Copy<3>(node.translate, gltfNode.translation.data());
                 }
                 if (gltfNode.rotation.empty() == false)
                 {
                     MFA_ASSERT(gltfNode.rotation.size() == 4);
-                    node.rotation[0] = static_cast<float>(gltfNode.rotation[0]);
-                    node.rotation[1] = static_cast<float>(gltfNode.rotation[1]);
-                    node.rotation[2] = static_cast<float>(gltfNode.rotation[2]);
-                    node.rotation[3] = static_cast<float>(gltfNode.rotation[3]);
+                    Memory::Copy<4>(node.rotation, gltfNode.rotation.data());
                 }
                 if (gltfNode.scale.empty() == false)
                 {
                     MFA_ASSERT(gltfNode.scale.size() == 3);
-                    node.scale[0] = static_cast<float>(gltfNode.scale[0]);
-                    node.scale[1] = static_cast<float>(gltfNode.scale[1]);
-                    node.scale[2] = static_cast<float>(gltfNode.scale[2]);
+                    Memory::Copy<3>(node.scale, gltfNode.scale.data());
                 }
                 if (gltfNode.matrix.empty() == false)
                 {
-                    for (int i = 0; i < 16; ++i)
-                    {
-                        node.transform[i] = static_cast<float>(gltfNode.matrix[i]);
-                    }
+                    Memory::Copy<16>(node.transform, gltfNode.matrix.data());
                 }
+
+                node.cacheTransform = node.transform * 
+                    Math::Translate(node.translate) * 
+                    glm::toMat4(node.rotation) * 
+                    Math::Scale(node.scale);
             }
         }
     }
@@ -519,7 +515,7 @@ namespace MFA::Importer
                     int32_t emissiveUvIndex = -1;
                     int16_t occlusionTextureIndex = -1;
                     int32_t occlusionUV_Index = -1;
-                    float baseColorFactor[4]{};
+                    float baseColorFactor[4]{1.0f, 1.0f, 1.0f, 1.0f};
                     float metallicFactor = 0;
                     float roughnessFactor = 0;
                     float emissiveFactor[3]{};
@@ -614,6 +610,7 @@ namespace MFA::Importer
                         }();
                         doubleSided = material.doubleSided;
                     }
+
                     uint32_t primitiveIndicesCount = 0;
                     {// Indices
                         MFA_REQUIRE(gltfPrimitive.indices < gltfModel.accessors.size());

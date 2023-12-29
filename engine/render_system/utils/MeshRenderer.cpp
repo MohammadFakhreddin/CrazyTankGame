@@ -76,33 +76,16 @@ namespace MFA
 		);
 		for (auto const& model : models)
 		{
-			_pipeline->SetPushConstants(
-				recordState,
-				FlatShadingPipeline::PushConstants{
-				.model = model
-			}
-			);
-
-			int descriptorSetIdx = 0;
-			for (auto& subMesh : _meshData->subMeshes)
+			auto const & rootNodes = _meshData->rootNodes;
+			auto const& nodes = _meshData->nodes;
+			for (auto & rootNode : rootNodes)
 			{
-				for (auto const& primitive : subMesh.primitives)
-				{
-					RB::AutoBindDescriptorSet(
-						recordState,
-						RB::UpdateFrequency::PerGeometry,
-						_descriptorSets[descriptorSetIdx].descriptorSets[0]
-					);
-
-					++descriptorSetIdx;
-
-					RB::DrawIndexed(
-						recordState,
-						primitive.indicesCount,
-						1,
-						primitive.indicesStartingIndex
-					);
-				}
+				auto const& node = nodes[rootNode];
+				DrawNode(
+					recordState, 
+					node, 
+					model
+				);
 			}
 		}
 	}
@@ -153,8 +136,10 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	std::shared_ptr<RT::BufferGroup> MeshRenderer::GenerateIndexBuffer(VkCommandBuffer cb,
-		AS::GLTF::Model const& model)
+	std::shared_ptr<RT::BufferGroup> MeshRenderer::GenerateIndexBuffer(
+		VkCommandBuffer cb,
+		AS::GLTF::Model const& model
+	)
 	{
 		auto& mesh = model.mesh;
 
@@ -227,7 +212,7 @@ namespace MFA
 						primitive.baseColorFactor[2],
 						primitive.baseColorFactor[3]
 					},
-						.hasBaseColorTexture = primitive.hasBaseColorTexture ? 1 : 0
+					.hasBaseColorTexture = primitive.hasBaseColorTexture ? 1 : 0
 				};
 
 				auto materialBuffer = RB::CreateLocalUniformBuffer(
@@ -270,8 +255,13 @@ namespace MFA
 	{
 		int nextMaterialIdx = 0;
 
+		_descriptorSets.clear();
+
 		for (auto const& subMesh : _meshData->subMeshes)
 		{
+			_descriptorSets.emplace_back();
+			auto & descriptorSets = _descriptorSets.back();
+
 			for (auto const& primitive : subMesh.primitives)
 			{
 				auto const* gpuTexture = _errorTexture.get();
@@ -281,7 +271,7 @@ namespace MFA
 					gpuTexture = _textures[primitive.baseColorTextureIndex].get();
 				}
 
-				_descriptorSets.emplace_back(
+				descriptorSets.emplace_back(
 					_pipeline->CreatePerGeometryDescriptorSetGroup(
 						*_materials[nextMaterialIdx]->buffers[0],
 						*gpuTexture
@@ -325,6 +315,62 @@ namespace MFA
 			glm::dvec3 const v2Pos = vertex2.position;
 
 			_collisionTriangles.emplace_back(Collision::GenerateCollisionTriangle(v0Pos, v1Pos, v2Pos));
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void MeshRenderer::DrawSubMesh(
+		RT::CommandRecordState& recordState,
+		int const subMeshIdx,
+		glm::mat4 const& transform
+	) const
+	{
+		auto const& subMesh = _meshData->subMeshes[subMeshIdx];
+		auto const& descriptorSets = _descriptorSets[subMeshIdx];
+
+		_pipeline->SetPushConstants(
+			recordState,
+			FlatShadingPipeline::PushConstants{
+				.model = transform
+			}
+		);
+
+		for (int i = 0; i < static_cast<int>(subMesh.primitives.size()); ++i)
+		{
+			auto const& primitive = subMesh.primitives[i];
+			RB::AutoBindDescriptorSet(
+				recordState,
+				RB::UpdateFrequency::PerGeometry,
+				descriptorSets[i].descriptorSets[0]
+			);
+
+			RB::DrawIndexed(
+				recordState,
+				primitive.indicesCount,
+				1,
+				primitive.indicesStartingIndex
+			);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void MeshRenderer::DrawNode(
+		RT::CommandRecordState& recordState, 
+		Asset::GLTF::Node const& node,
+		glm::mat4 const& parentTransform
+	) const
+	{
+		auto const transform = parentTransform * node.cacheTransform;
+		if (node.hasSubMesh())
+		{
+			DrawSubMesh(recordState, node.subMeshIndex, transform);
+		}
+
+		for (auto const child : node.children)
+		{
+			DrawNode(recordState, _meshData->nodes[child], transform);
 		}
 	}
 

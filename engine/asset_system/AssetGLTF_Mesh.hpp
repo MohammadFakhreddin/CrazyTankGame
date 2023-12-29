@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <detail/type_quat.hpp>
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
@@ -124,28 +125,19 @@ namespace MFA::Asset::GLTF
     {
         friend class Mesh;
 
-        explicit Node();
-
-        explicit Node(Node && other) noexcept;
-
-        explicit Node(Node const & other) noexcept;
-
-        Node & operator=(Node && other) noexcept;
-
-        Node & operator=(Node const & other) noexcept;
+		explicit Node();
         
         int subMeshIndex = -1;
         std::vector<int> children{};
-        float transform[16]{
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 1.0f
-        };                       // Preset animation value
-        float rotation[4]{ 0.0f, 0.0f, 0.0f, 1.0f };     // x, y, z, w
-        float scale[3]{ 1.0f, 1.0f, 1.0f };
-        float translate[3]{ 0.0f, 0.0f, 0.0f };
-        int parent = -1;
+
+        glm::dquat rotation = glm::identity<glm::dquat>();     // x, y, z, w
+        glm::dvec3 scale{ 1.0f, 1.0f, 1.0f };
+        glm::dvec3 translate{ 0.0f, 0.0f, 0.0f };
+		glm::dmat4 transform = glm::identity<glm::dmat4>();
+
+		glm::mat4 cacheTransform = glm::identity<glm::mat4>();
+
+		int parent = -1;
         int skin = -1;
 
         [[nodiscard]]

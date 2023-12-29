@@ -113,7 +113,7 @@ CrazyTankGameApp::CrazyTankGameApp()
     }
 
 	{// Tank model
-		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_1.glb"));
+		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_0.glb"));
 		tankRenderer = std::make_unique<MeshRenderer>(
 			shadingPipeline,
 			tankCpuModel,

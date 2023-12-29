@@ -6,51 +6,9 @@
 namespace MFA::Asset::GLTF
 {
 
-	//-------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------
 
     Node::Node() = default;
-
-	//-------------------------------------------------------------------------------------------------
-
-	#define NODE_COPY(other)                                                          \
-    subMeshIndex = (other).subMeshIndex;                                              \
-    children = (other).children;                                                      \
-    Memory::Copy<16>(transform, (other).transform);                                   \
-    Memory::Copy<4>(rotation, (other).rotation);                                      \
-    Memory::Copy<3>(scale, (other).scale);                                            \
-    Memory::Copy<3>(translate, (other).translate);                                    \
-    parent = (other).parent;                                                          \
-    skin = (other).skin;                                                              \
-    
-    //-------------------------------------------------------------------------------------------------
-
-	Node::Node(Node&& other) noexcept
-	{
-        NODE_COPY(other)
-	}
-
-    //-------------------------------------------------------------------------------------------------
-
-	Node::Node(Node const& other) noexcept
-	{
-        NODE_COPY(other)
-	}
-
-    //-------------------------------------------------------------------------------------------------
-
-	Node& Node::operator=(Node&& other) noexcept
-	{
-        NODE_COPY(other)
-        return *this;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	Node& Node::operator=(Node const& other) noexcept
-	{
-        NODE_COPY(other)
-        return *this;
-	}
 
     //-------------------------------------------------------------------------------------------------
 
@@ -125,6 +83,31 @@ namespace MFA::Asset::GLTF
                     MFA_LOG_ERROR("Unhandled primitive alpha mode detected %d", static_cast<int>(primitive.alphaMode));
                     break;
                 }
+            }
+        }
+
+        MFA_ASSERT(mData->nodes.empty() == false);
+        MFA_ASSERT(mData->rootNodes.empty() == true);
+
+        // Step one: Store parent index for each child
+        for (int i = 0; i < static_cast<int>(mData->nodes.size()); ++i)
+        {
+            auto const& currentNode = mData->nodes[i];
+            if (currentNode.children.empty() == false)
+            {
+                for (auto const child : currentNode.children)
+                {
+                    mData->nodes[child].parent = i;
+                }
+            }
+        }
+        // Step two: Cache parent nodes in a separate daa structure for faster access
+        for (uint32_t i = 0; i < static_cast<uint32_t>(mData->nodes.size()); ++i)
+        {
+            auto const& currentNode = mData->nodes[i];
+            if (currentNode.parent < 0)
+            {
+                mData->rootNodes.emplace_back(i);
             }
         }
 	}
