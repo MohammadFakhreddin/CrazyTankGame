@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BedrockMemory.hpp"
+#include "Transform.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -126,19 +127,16 @@ namespace MFA::Asset::GLTF
         friend class Mesh;
 
 		explicit Node();
+
+		std::string name{};
         
         int subMeshIndex = -1;
         std::vector<int> children{};
 
-        glm::dquat rotation = glm::identity<glm::dquat>();     // x, y, z, w
-        glm::dvec3 scale{ 1.0f, 1.0f, 1.0f };
-        glm::dvec3 translate{ 0.0f, 0.0f, 0.0f };
-		glm::dmat4 transform = glm::identity<glm::dmat4>();
-
-		glm::mat4 cacheTransform = glm::identity<glm::mat4>();
-
 		int parent = -1;
         int skin = -1;
+
+		Transform transform{};
 
         [[nodiscard]]
         bool hasSubMesh() const noexcept;

@@ -1,6 +1,7 @@
 #include "MeshRenderer.hpp"
 
 #include "LogicalDevice.hpp"
+#include "MeshInstance.hpp"
 
 namespace MFA
 {
@@ -57,7 +58,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void MeshRenderer::Render(RT::CommandRecordState& recordState, std::vector<glm::mat4> const& models) const
+	void MeshRenderer::Render(RT::CommandRecordState& recordState, std::vector<glm::mat4> const& models)
 	{
 		_pipeline->BindPipeline(recordState);
 
@@ -77,14 +78,49 @@ namespace MFA
 		for (auto const& model : models)
 		{
 			auto const & rootNodes = _meshData->rootNodes;
-			auto const& nodes = _meshData->nodes;
+			auto & nodes = _meshData->nodes;
 			for (auto & rootNode : rootNodes)
 			{
-				auto const& node = nodes[rootNode];
+				auto & node = nodes[rootNode];
 				DrawNode(
 					recordState, 
 					node, 
 					model
+				);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void MeshRenderer::Render(RT::CommandRecordState& recordState, std::vector<MeshInstance*> const& instances) const
+	{
+		_pipeline->BindPipeline(recordState);
+
+		RB::BindIndexBuffer(
+			recordState,
+			*_indicesBuffer,
+			0,
+			VK_INDEX_TYPE_UINT32
+		);
+
+		RB::BindVertexBuffer(
+			recordState,
+			*_verticesBuffer,
+			0,
+			0
+		);
+		for (auto & instance : instances)
+		{
+			auto const& rootNodes = _meshData->rootNodes;
+			auto & nodes = instance->GetNodes();
+			for (auto& rootNode : rootNodes)
+			{
+				auto& node = nodes[rootNode];
+				DrawNode(
+					recordState,
+					node,
+					instance->GetTransform().GetMatrix()
 				);
 			}
 		}
@@ -358,11 +394,11 @@ namespace MFA
 
 	void MeshRenderer::DrawNode(
 		RT::CommandRecordState& recordState, 
-		Asset::GLTF::Node const& node,
+		Asset::GLTF::Node & node,
 		glm::mat4 const& parentTransform
 	) const
 	{
-		auto const transform = parentTransform * node.cacheTransform;
+		auto const transform = parentTransform * node.transform.GetMatrix();
 		if (node.hasSubMesh())
 		{
 			DrawSubMesh(recordState, node.subMeshIndex, transform);
@@ -437,6 +473,13 @@ namespace MFA
 		}
 
 		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	std::vector<Asset::GLTF::Node> const& MeshRenderer::GetNodes() const noexcept
+	{
+		return _meshData->nodes;
 	}
 
 	//-------------------------------------------------------------------------------------------------

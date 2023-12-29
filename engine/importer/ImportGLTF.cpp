@@ -176,6 +176,7 @@ namespace MFA::Importer
             for (auto const & gltfNode : gltfModel.nodes)
             {
                 Node & node = mesh->InsertNode();
+                node.name = gltfNode.name;
                 node.subMeshIndex = gltfNode.mesh;
                 node.children = gltfNode.children;
                 node.skin = gltfNode.skin;
@@ -183,27 +184,33 @@ namespace MFA::Importer
                 if (gltfNode.translation.empty() == false)
                 {
                     MFA_ASSERT(gltfNode.translation.size() == 3);
-                    Memory::Copy<3>(node.translate, gltfNode.translation.data());
+                    glm::dvec3 translate{};
+                    Memory::Copy<3>(translate, gltfNode.translation.data());
+                    node.transform.Setposition(translate);
                 }
+
                 if (gltfNode.rotation.empty() == false)
                 {
                     MFA_ASSERT(gltfNode.rotation.size() == 4);
-                    Memory::Copy<4>(node.rotation, gltfNode.rotation.data());
+                    glm::dquat rotation{};
+                	Memory::Copy<4>(rotation, gltfNode.rotation.data());
+                    node.transform.SetQuaternion(rotation);
                 }
+
                 if (gltfNode.scale.empty() == false)
                 {
                     MFA_ASSERT(gltfNode.scale.size() == 3);
-                    Memory::Copy<3>(node.scale, gltfNode.scale.data());
-                }
-                if (gltfNode.matrix.empty() == false)
-                {
-                    Memory::Copy<16>(node.transform, gltfNode.matrix.data());
+                    glm::dvec3 scale{};
+                	Memory::Copy<3>(scale, gltfNode.scale.data());
+                    node.transform.Setscale(scale);
                 }
 
-                node.cacheTransform = node.transform * 
-                    Math::Translate(node.translate) * 
-                    glm::toMat4(node.rotation) * 
-                    Math::Scale(node.scale);
+                if (gltfNode.matrix.empty() == false)
+                {
+                    glm::dmat4 extraTransform{};
+                    Memory::Copy<16>(node.transform, gltfNode.matrix.data());
+                    node.transform.SetextraTransform(extraTransform);
+                }
             }
         }
     }

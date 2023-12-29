@@ -97,6 +97,12 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/bedrock")
 include_directories("${CMAKE_SOURCE_DIR}/engine/bedrock")
 link_libraries(Bedrock)
 
+### Entity system ########################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/engine/entity_system")
+include_directories("${CMAKE_SOURCE_DIR}/engine/entity_system")
+link_libraries(EntitySystem)
+
 ### Asset system #########################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/asset_system")

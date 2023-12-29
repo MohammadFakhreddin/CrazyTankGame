@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 
 #include "pipeline/FlatShadingPipeline.hpp"
 #include "RenderBackend.hpp"
@@ -7,8 +6,12 @@
 #include "ImportGLTF.hpp"
 #include "Collision.hpp"
 
+#include <memory>
+
 namespace MFA
 {
+
+    class MeshInstance;
 
     class MeshRenderer
     {
@@ -20,7 +23,9 @@ namespace MFA
             std::shared_ptr<RT::GpuTexture> errorTexture
         );
 
-        void Render(RT::CommandRecordState& recordState, std::vector<glm::mat4> const& models) const;
+        void Render(RT::CommandRecordState& recordState, std::vector<glm::mat4> const& models);
+
+        void Render(RT::CommandRecordState& recordState, std::vector<MeshInstance*> const& instances) const;
 
         [[nodiscard]]
         std::vector<CollisionTriangle> GetCollisionTriangles(glm::mat4 const& model) const noexcept;
@@ -29,6 +34,8 @@ namespace MFA
         std::vector<glm::vec3> GetVertices(glm::mat4 const& model) const noexcept;
 
         std::vector<std::vector<std::tuple<int, int>>> GetNeighbors() const noexcept;
+
+        std::vector<Asset::GLTF::Node> const & GetNodes() const noexcept;
 
     private:
 
@@ -52,7 +59,7 @@ namespace MFA
 
         void DrawNode(
             RT::CommandRecordState& recordState,
-            Asset::GLTF::Node const& node, 
+            Asset::GLTF::Node & node, 
             glm::mat4 const& parentTransform
         ) const;
 
