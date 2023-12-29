@@ -8,6 +8,66 @@ namespace MFA::Asset::GLTF
 
 	//-------------------------------------------------------------------------------------------------
 
+    Node::Node() = default;
+
+	//-------------------------------------------------------------------------------------------------
+
+	#define NODE_COPY(other)                                                          \
+    subMeshIndex = (other).subMeshIndex;                                              \
+    children = (other).children;                                                      \
+    Memory::Copy<16>(transform, (other).transform);                                   \
+    Memory::Copy<4>(rotation, (other).rotation);                                      \
+    Memory::Copy<3>(scale, (other).scale);                                            \
+    Memory::Copy<3>(translate, (other).translate);                                    \
+    parent = (other).parent;                                                          \
+    skin = (other).skin;                                                              \
+    
+    //-------------------------------------------------------------------------------------------------
+
+	Node::Node(Node&& other) noexcept
+	{
+        NODE_COPY(other)
+	}
+
+    //-------------------------------------------------------------------------------------------------
+
+	Node::Node(Node const& other) noexcept
+	{
+        NODE_COPY(other)
+	}
+
+    //-------------------------------------------------------------------------------------------------
+
+	Node& Node::operator=(Node&& other) noexcept
+	{
+        NODE_COPY(other)
+        return *this;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	Node& Node::operator=(Node const& other) noexcept
+	{
+        NODE_COPY(other)
+        return *this;
+	}
+
+    //-------------------------------------------------------------------------------------------------
+
+	bool Node::hasSubMesh() const noexcept
+	{
+        return subMeshIndex >= 0;
+	}
+
+    //-------------------------------------------------------------------------------------------------
+
+	bool Node::HasParent() const noexcept
+	{
+        return parent >= 0;
+	}
+
+    //-------------------------------------------------------------------------------------------------
+
 	Mesh::Mesh(
 		uint32_t const vertexCount,
 		uint32_t const indexCount,
@@ -149,6 +209,29 @@ namespace MFA::Asset::GLTF
         mIndicesStartingIndex += indicesCount;
         mVerticesStartingIndex += vertexCount;
 	}
+
+    //-------------------------------------------------------------------------------------------------
+
+    Node & Mesh::InsertNode() const
+    {
+        mData->nodes.emplace_back();
+        return mData->nodes.back();
+    }
+
+    //-------------------------------------------------------------------------------------------------
+
+    Skin & Mesh::InsertSkin() const
+    {
+        mData->skins.emplace_back();
+        return mData->skins.back();
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+
+    void Mesh::InsertAnimation(Animation const & animation) const
+    {
+        mData->animations.emplace_back(animation);
+    }
 
 	//-------------------------------------------------------------------------------------------------
 
