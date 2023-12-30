@@ -2,6 +2,8 @@
 
 #include "utils/MeshInstance.hpp"
 
+#include <list>
+
 struct TankEntity {
     glm::vec2 flatPosition;
     float baseAngle, headAngle, scale;
@@ -45,4 +47,49 @@ struct TankEntity {
 private:
     std::unique_ptr<MFA::MeshInstance> _meshInstance;
     MFA::Asset::GLTF::Node* _headNode;
+};
+
+struct GameLogic {
+    static constexpr float PLAYER_SPEED = 10.0f;
+    static constexpr float PLAYER_TURN_SPEED = glm::pi<float>();
+    static constexpr float PLAYER_HEAD_TURN_SPEED = glm::pi<float>();
+    TankEntity player;
+
+    GameLogic(std::unique_ptr<MFA::MeshRenderer> pTankRenderer) : player(*pTankRenderer) {
+        _pTankRenderer = std::move(pTankRenderer);
+    }
+
+    void reset() {
+        _pTankRenderer.reset();
+    }
+
+    void Update(float delta, const glm::vec2& joystickInp, bool inputA, bool inputB) {
+        float const inputMagnitude = glm::length(joystickInp);
+
+        if (inputMagnitude > glm::epsilon<float>()) {
+            player.baseAngle = fmodf(player.baseAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
+            player.flatPosition += player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
+        }
+
+        if (inputA) {
+            player.headAngle += delta * PLAYER_HEAD_TURN_SPEED;
+        }
+
+        if (inputB) {
+            player.headAngle -= delta * PLAYER_HEAD_TURN_SPEED;
+        }
+
+        player.UpdateMI();
+
+        _inputA = inputA;
+        _inputB = inputB;
+    }
+
+    void Render(MFA::RT::CommandRecordState& recordState) {
+        _pTankRenderer->Render(recordState, { player.GetMI() });
+    }
+
+private:
+    bool _inputA = false, _inputB = false;
+    std::unique_ptr<MFA::MeshRenderer> _pTankRenderer;
 };
