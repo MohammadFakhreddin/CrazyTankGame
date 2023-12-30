@@ -270,11 +270,10 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	//tankRenderer->Render(recordState, { playerInstance.get() });
 	tankRenderer->Render(recordState, { playerTank->GetMI() });
 	tankRenderer->Render(recordState, { enemyTank->GetMI() });
 
-	map->Render(recordState);
+	// map->Render(recordState);
 
 	ui->Render(recordState, _deltaTimeSec);
 
