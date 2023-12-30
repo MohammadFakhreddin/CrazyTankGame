@@ -6,6 +6,7 @@
 #include "pipeline/FlatShadingPipeline.hpp"
 #include "camera/PerspectiveCamera.hpp"
 #include "utils/MeshRenderer.hpp"
+#include "utils/MeshInstance.hpp"
 
 #include <memory>
 #include <thread>
@@ -62,14 +63,19 @@ private:
     std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
 
     glm::vec2 inputAxis{};
-
+    bool inputA{};
+    bool inputB{};
+    
     float playerSpeed = 10.0f;
-    float playerAngularSpeed = glm::pi<float>();
+    
+	float playerAngularSpeed = glm::pi<float>();
+    float tankHeadAngularSpeed = glm::pi<float>();
 
     float playerAngle = 0.f;
+    float tankHeadAngle = 0.f;
 
-    glm::vec3 playerPosition{0.0f, 0.0f, 0.0f};
-    glm::vec3 playerScale{0.1f, 0.1f, 0.1f};
-    glm::quat playerRotation = glm::identity<glm::quat>();
-    glm::mat4 playerMatrix = glm::identity<glm::mat3>();
+    std::unique_ptr<MFA::MeshInstance> playerInstance{};
+
+    using Node = MFA::Asset::GLTF::Node;
+    Node * tankHead{};
 };

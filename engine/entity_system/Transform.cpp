@@ -13,14 +13,14 @@ namespace MFA
 
 	void Transform::SetEulerAngles(glm::vec3 const & eulerAngles)
 	{
-		_isDirty = _rotation.SetEulerAngles(eulerAngles);
+		_isDirty |= _rotation.SetEulerAngles(eulerAngles);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
 	void Transform::SetQuaternion(glm::quat const & quaternion)
 	{
-		_isDirty = _rotation.SetQuaternion(quaternion);
+		_isDirty |= _rotation.SetQuaternion(quaternion);
 	}
 
 	//-------------------------------------------------------------------------------------------------

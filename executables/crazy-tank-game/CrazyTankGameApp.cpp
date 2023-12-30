@@ -113,12 +113,16 @@ CrazyTankGameApp::CrazyTankGameApp()
     }
 
 	{// Tank model
-		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_0.glb"));
+		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_2.glb"));
 		tankRenderer = std::make_unique<MeshRenderer>(
 			shadingPipeline,
 			tankCpuModel,
 			errorTexture
 		);
+		playerInstance = std::make_unique<MeshInstance>(*tankRenderer);
+		playerInstance->GetTransform().Setscale(glm::vec3{ 0.1f, 0.1f, 0.1f });
+		tankHead = playerInstance->FindNode("Head");
+		MFA_ASSERT(tankHead != nullptr);
 	}
 }
 
@@ -214,14 +218,25 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 		if (inputMagnitude > glm::epsilon<float>())
 		{
+			auto& transform = playerInstance->GetTransform();
+
 			playerAngle = fmodf(playerAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
-			glm::vec3 playerDirection{ sinf(playerAngle), 0.f, cosf(playerAngle) };
-			playerPosition += playerDirection * inputAxis.y * playerSpeed * deltaTimeSec;
+			glm::vec3 const playerDirection{ sinf(playerAngle), 0.f, cosf(playerAngle) };
+			auto const newPosition = transform.Getposition() + playerDirection * inputAxis.y * playerSpeed * deltaTimeSec;
+			transform.Setposition(newPosition);
+			transform.SetQuaternion(glm::angleAxis(playerAngle, glm::vec3{ 0.f, 1.f, 0.f }));
 		}
-		auto const translateMatrix = Math::Translate(playerPosition);
-		auto const rotationMatrix = glm::toMat4(glm::angleAxis(playerAngle, glm::vec3{ 0.f, 1.f, 0.f }));
-		auto const scaleMatrix = Math::Scale(playerScale);
-		playerMatrix = translateMatrix * rotationMatrix * scaleMatrix;
+
+		if (inputA == true)
+		{
+			tankHeadAngle += deltaTimeSec * tankHeadAngularSpeed;
+			tankHead->transform.SetQuaternion(glm::angleAxis(tankHeadAngle, glm::vec3{ 0.f, 1.f, 0.f }));
+		}
+		if (inputB == true)
+		{
+			tankHeadAngle -= deltaTimeSec * tankHeadAngularSpeed;
+			tankHead->transform.SetQuaternion(glm::angleAxis(tankHeadAngle, glm::vec3{ 0.f, 1.f, 0.f }));
+		}
 	}
 }
 
@@ -244,7 +259,7 @@ void CrazyTankGameApp::Render(MFA::RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	tankRenderer->Render(recordState, {playerMatrix});
+	tankRenderer->Render(recordState, { playerInstance.get() });
 
 	ui->Render(recordState, _deltaTimeSec);
 
@@ -296,6 +311,15 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 
 		inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
 		inputAxis.y = std::clamp(inputAxis.y, -1.0f, 1.0f);
+
+		if(event->key.keysym.sym == SDLK_a)
+		{
+			inputA = modifier > 0;
+		}
+		if (event->key.keysym.sym == SDLK_z)
+		{
+			inputB = modifier > 0;
+		}
 	}
 
 	if (event->type == SDL_JOYAXISMOTION) {
@@ -316,17 +340,21 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		if (event->jbutton.button == 1 /* BUTTON A */) {
 			if (is_button_released) {
 				MFA_LOG_DEBUG("A released");
+				inputA = false;
 			}
 			else {
 				MFA_LOG_DEBUG("A pressed");
+				inputA = true;
 			}
 		}
 		else if (event->jbutton.button == 2 /* BUTTON B */) {
 			if (is_button_released) {
 				MFA_LOG_DEBUG("B released");
+				inputB = false;
 			}
 			else {
 				MFA_LOG_DEBUG("B pressed");
+				inputB = true;
 			}
 		}
 	}
