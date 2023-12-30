@@ -113,18 +113,15 @@ CrazyTankGameApp::CrazyTankGameApp()
     }
 
 	{// Tank model
-		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_2.glb"));
 		tankRenderer = std::make_unique<MeshRenderer>(
 			shadingPipeline,
-			tankCpuModel,
+			Importer::GLTF_Model(Path::Instance->Get("models/test/tank_2.glb")),
 			errorTexture,
 			true,
 			glm::vec4 {0.0f, 0.25f, 0.0f, 1.0f}
 		);
-		playerInstance = std::make_unique<MeshInstance>(*tankRenderer);
-		playerInstance->GetTransform().Setscale(glm::vec3{ 0.1f, 0.1f, 0.1f });
-		tankHead = playerInstance->FindNode("Head");
-		MFA_ASSERT(tankHead != nullptr);
+		playerTank = std::make_unique<TankEntity>(*tankRenderer);
+		enemyTank = std::make_unique<TankEntity>(*tankRenderer, glm::vec2{ 2.f, 2.f });
 	}
 
 	{
@@ -235,27 +232,22 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 	{// Player matrix
 		float const inputMagnitude = glm::length(inputAxis);
 
-		if (inputMagnitude > glm::epsilon<float>())
-		{
-			auto& transform = playerInstance->GetTransform();
-
-			playerAngle = fmodf(playerAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
-			glm::vec3 const playerDirection{ sinf(playerAngle), 0.f, cosf(playerAngle) };
-			auto const newPosition = transform.Getposition() + playerDirection * inputAxis.y * playerSpeed * deltaTimeSec;
-			transform.Setposition(newPosition);
-			transform.SetQuaternion(glm::angleAxis(playerAngle, glm::vec3{ 0.f, 1.f, 0.f }));
+		if (inputMagnitude > glm::epsilon<float>()) {
+			playerTank->baseAngle = fmodf(playerTank->baseAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
+			playerTank->flatPosition += playerTank->BaseDir() * inputAxis.y * playerSpeed * deltaTimeSec;
 		}
 
-		if (inputA == true)
-		{
-			tankHeadAngle += deltaTimeSec * tankHeadAngularSpeed;
-			tankHead->transform.SetQuaternion(glm::angleAxis(tankHeadAngle, glm::vec3{ 0.f, 1.f, 0.f }));
+		if (inputA) {
+			playerTank->headAngle += deltaTimeSec * tankHeadAngularSpeed;
 		}
-		if (inputB == true)
-		{
-			tankHeadAngle -= deltaTimeSec * tankHeadAngularSpeed;
-			tankHead->transform.SetQuaternion(glm::angleAxis(tankHeadAngle, glm::vec3{ 0.f, 1.f, 0.f }));
+
+		if (inputB) {
+			playerTank->headAngle -= deltaTimeSec * tankHeadAngularSpeed;
 		}
+
+		playerTank->UpdateMI();
+		enemyTank->AimAt(playerTank->flatPosition - enemyTank->flatPosition);
+		enemyTank->UpdateMI();
 	}
 }
 
@@ -278,7 +270,9 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	tankRenderer->Render(recordState, { playerInstance.get() });
+	//tankRenderer->Render(recordState, { playerInstance.get() });
+	tankRenderer->Render(recordState, { playerTank->GetMI() });
+	tankRenderer->Render(recordState, { enemyTank->GetMI() });
 
 	map->Render(recordState);
 
