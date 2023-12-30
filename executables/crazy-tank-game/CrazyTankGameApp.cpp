@@ -117,12 +117,30 @@ CrazyTankGameApp::CrazyTankGameApp()
 		tankRenderer = std::make_unique<MeshRenderer>(
 			shadingPipeline,
 			tankCpuModel,
-			errorTexture
+			errorTexture,
+			true,
+			glm::vec4 {0.0f, 0.25f, 0.0f, 1.0f}
 		);
 		playerInstance = std::make_unique<MeshInstance>(*tankRenderer);
 		playerInstance->GetTransform().Setscale(glm::vec3{ 0.1f, 0.1f, 0.1f });
 		tankHead = playerInstance->FindNode("Head");
 		MFA_ASSERT(tankHead != nullptr);
+	}
+
+	{
+		std::vector<int> walls{
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+			1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
+			1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
+ 			1, 0, 1, 0, 0, 1, 0, 1, 0, 1,
+			1, 0, 1, 0, 0, 0, 0, 1, 0, 1,
+			1, 0, 1, 0, 0, 0, 0, 1, 0, 1,
+			1, 0, 1, 0, 1, 0, 0, 1, 0, 1,
+			1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+			1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		};
+		map = std::make_unique<Map>(15.0f, 15.0f, 10, 10, walls.data(), shadingPipeline, errorTexture);
 	}
 }
 
@@ -130,6 +148,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 CrazyTankGameApp::~CrazyTankGameApp()
 {
+	map.reset();
 	tankRenderer.reset();
 	errorTexture.reset();
 	shadingPipeline.reset();
@@ -242,7 +261,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 //------------------------------------------------------------------------------------------------------
 
-void CrazyTankGameApp::Render(MFA::RT::CommandRecordState& recordState)
+void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 {
 	device->BeginCommandBuffer(
 		recordState,
@@ -260,6 +279,8 @@ void CrazyTankGameApp::Render(MFA::RT::CommandRecordState& recordState)
 	displayRenderPass->Begin(recordState);
 
 	tankRenderer->Render(recordState, { playerInstance.get() });
+
+	map->Render(recordState);
 
 	ui->Render(recordState, _deltaTimeSec);
 

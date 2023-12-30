@@ -9,6 +9,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/CrazyTankGameMain.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/CrazyTankGameApp.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/CrazyTankGameApp.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Map.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Map.cpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

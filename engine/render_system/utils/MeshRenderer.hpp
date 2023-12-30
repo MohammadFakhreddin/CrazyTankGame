@@ -20,7 +20,9 @@ namespace MFA
         explicit MeshRenderer(
             std::shared_ptr<FlatShadingPipeline> pipeline,
             std::shared_ptr<AS::GLTF::Model> const& model,
-            std::shared_ptr<RT::GpuTexture> errorTexture
+            std::shared_ptr<RT::GpuTexture> errorTexture,
+            bool hasOverrideColor = false,
+            glm::vec4 overrideColor = {}
         );
 
         void Render(RT::CommandRecordState& recordState, std::vector<glm::mat4> const& models);
@@ -82,6 +84,9 @@ namespace MFA
 
         int _indexCount{};
         std::shared_ptr<Blob> _indices{};
+
+        bool _hasOverrideColor{};
+        glm::vec4 _overrideColor{};
     };
 
 }

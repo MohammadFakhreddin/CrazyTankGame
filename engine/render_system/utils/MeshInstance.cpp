@@ -8,6 +8,10 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
+	MeshInstance::MeshInstance() = default;
+
+	//-------------------------------------------------------------------------------------------------
+
 	MeshInstance::MeshInstance(MeshRenderer const& meshRenderer)
 	{
 		_nodes = meshRenderer.GetNodes();

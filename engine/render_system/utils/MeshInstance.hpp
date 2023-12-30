@@ -14,6 +14,8 @@ namespace MFA
         // TODO: Handle caching for parent and child
         using Node = Asset::GLTF::Node;
 
+        explicit MeshInstance();
+
         explicit MeshInstance(MeshRenderer const & meshRenderer);
 
         [[nodiscard]]

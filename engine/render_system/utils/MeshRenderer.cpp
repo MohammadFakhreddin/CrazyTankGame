@@ -11,11 +11,15 @@ namespace MFA
 	MeshRenderer::MeshRenderer(
 		std::shared_ptr<FlatShadingPipeline> pipeline,
 		std::shared_ptr<AS::GLTF::Model> const& model,
-		std::shared_ptr<RT::GpuTexture> errorTexture
+		std::shared_ptr<RT::GpuTexture> errorTexture,
+		bool hasOverrideColor,
+		glm::vec4 overrideColor
 	)
 		: _pipeline(std::move(pipeline))
 		, _meshData(model->mesh->GetMeshData())
 		, _errorTexture(std::move(errorTexture))
+		, _hasOverrideColor(hasOverrideColor)
+		, _overrideColor(overrideColor)
 	{
 
 		if (model->mesh->IsCentered() == false)
@@ -242,12 +246,12 @@ namespace MFA
 			for (auto const& primitive : subMesh.primitives)
 			{
 				FlatShadingPipeline::Material data{
-					.color = glm::vec4{
+					.color = _hasOverrideColor == false ? glm::vec4{
 						primitive.baseColorFactor[0],
 						primitive.baseColorFactor[1],
 						primitive.baseColorFactor[2],
 						primitive.baseColorFactor[3]
-					},
+					} : _overrideColor,
 					.hasBaseColorTexture = primitive.hasBaseColorTexture ? 1 : 0
 				};
 

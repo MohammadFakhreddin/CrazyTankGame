@@ -7,6 +7,7 @@
 #include "camera/PerspectiveCamera.hpp"
 #include "utils/MeshRenderer.hpp"
 #include "utils/MeshInstance.hpp"
+#include "Map.hpp"
 
 #include <memory>
 #include <thread>
@@ -78,4 +79,6 @@ private:
 
     using Node = MFA::Asset::GLTF::Node;
     Node * tankHead{};
+
+    std::unique_ptr<Map> map{};
 };
