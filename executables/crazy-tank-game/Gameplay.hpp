@@ -1,12 +1,17 @@
 #pragma once
 
+#include "BufferTracker.hpp"
+#include "BedrockPath.hpp"
+#include "utils/MeshRenderer.hpp"
 #include "utils/MeshInstance.hpp"
 
 #include <list>
 
 struct TankEntity {
-    glm::vec2 flatPosition;
-    float baseAngle, headAngle, scale;
+    glm::vec2 flatPosition{};
+    float baseAngle = 0.f, headAngle = 0.f, scale = 1.f;
+
+    TankEntity() {}
 
     TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initHA = 0.f, float initScale = 0.1f) {
         _meshInstance = std::make_unique<MFA::MeshInstance>(meshRenderer);
@@ -45,20 +50,72 @@ struct TankEntity {
     }
 
 private:
-    std::unique_ptr<MFA::MeshInstance> _meshInstance;
-    MFA::Asset::GLTF::Node* _headNode;
+    std::unique_ptr<MFA::MeshInstance> _meshInstance{};
+    MFA::Asset::GLTF::Node* _headNode = nullptr;
 };
 
-struct GameLogic {
+struct BulletEntity {
+    glm::vec2 flatPosition{};
+    float baseAngle = 0.f, scale = 1.f;
+    float lifetimer = 4.f;
+
+    BulletEntity() {}
+
+    BulletEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initScale = 0.1f) {
+        _meshInstance = std::make_unique<MFA::MeshInstance>(meshRenderer);
+
+        flatPosition = initPos;
+        baseAngle = initBA;
+        scale = initScale;
+        UpdateMI();
+    }
+
+    void UpdateMI() {
+        auto& transform = _meshInstance->GetTransform();
+        transform.Setposition({ flatPosition.x, 0.f, flatPosition.y });
+        transform.Setscale(glm::vec3{ scale });
+        transform.SetQuaternion(glm::angleAxis(baseAngle, glm::vec3{ 0.f, 1.f, 0.f }));
+    }
+
+    MFA::MeshInstance* GetMI() const {
+        return _meshInstance.get();
+    }
+
+    glm::vec2 BaseDir() const {
+        return { -sinf(baseAngle), -cosf(baseAngle) };
+    }
+
+private:
+    std::unique_ptr<MFA::MeshInstance> _meshInstance{};
+};
+
+struct GameInstance {
     static constexpr float PLAYER_SPEED = 10.0f;
     static constexpr float PLAYER_TURN_SPEED = glm::pi<float>();
     static constexpr float PLAYER_HEAD_TURN_SPEED = glm::pi<float>();
     TankEntity player;
+    std::list<BulletEntity> test_player_bullets;
 
     std::list<TankEntity> test_enemies;
 
-    GameLogic(std::unique_ptr<MFA::MeshRenderer> pTankRenderer) : player(*pTankRenderer) {
-        _pTankRenderer = std::move(pTankRenderer);
+    GameInstance(std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
+        std::shared_ptr<MFA::RT::GpuTexture> errorTexture) {
+        _pTankRenderer = std::make_unique<MFA::MeshRenderer>(
+            pipeline,
+            MFA::Importer::GLTF_Model(MFA::Path::Instance->Get("models/test/tank_2.glb")),
+            errorTexture,
+            true,
+            glm::vec4{ 0.0f, 0.25f, 0.0f, 1.0f }
+        );
+        player = TankEntity(*_pTankRenderer);
+
+        _pBulletRenderer = std::make_unique<MFA::MeshRenderer>(
+            pipeline,
+            MFA::Importer::GLTF_Model(MFA::Path::Instance->Get("models/test/cube.glb")),
+            errorTexture,
+            true,
+            glm::vec4{ 0.0f, 0.25f, 0.0f, 1.0f }
+        );
     }
 
     void add_test_enemies() {
@@ -74,17 +131,18 @@ struct GameLogic {
     void Update(float delta, const glm::vec2& joystickInp, bool inputA, bool inputB) {
         float const inputMagnitude = glm::length(joystickInp);
 
-        if (inputMagnitude > glm::epsilon<float>()) {
-            player.baseAngle = fmodf(player.baseAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
-            player.flatPosition += player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
+        if (!inputA) {
+            if (inputMagnitude > glm::epsilon<float>()) {
+                player.baseAngle = fmodf(player.baseAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
+                player.flatPosition += player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
+            }
+        }
+        else {
+            player.headAngle = fmodf(player.headAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
         }
 
-        if (inputA) {
-            player.headAngle += delta * PLAYER_HEAD_TURN_SPEED;
-        }
-
-        if (inputB) {
-            player.headAngle -= delta * PLAYER_HEAD_TURN_SPEED;
+        if (!inputA && _inputA) {
+            test_player_bullets.emplace_back(*_pBulletRenderer, player.flatPosition, player.baseAngle + player.headAngle, 0.1f);
         }
 
         player.UpdateMI();
@@ -96,10 +154,28 @@ struct GameLogic {
 
         _inputA = inputA;
         _inputB = inputB;
+
+        std::vector<std::list<BulletEntity>::iterator> toRemove;
+        for (std::list<BulletEntity>::iterator it = test_player_bullets.begin(); it != test_player_bullets.end(); ++it) {
+            it->flatPosition += it->BaseDir() * 20.f * delta;
+            it->lifetimer -= delta;
+            if (it->lifetimer <= 0) {
+                toRemove.emplace_back(it);
+            }
+            it->UpdateMI();
+        }
+        for (std::list<BulletEntity>::iterator it : toRemove) {
+            test_player_bullets.erase(it);
+        }
     }
 
     void Render(MFA::RT::CommandRecordState& recordState) {
         _pTankRenderer->Render(recordState, { player.GetMI() });
+
+        for (const BulletEntity& b : test_player_bullets) {
+            _pBulletRenderer->Render(recordState, { b.GetMI() });
+        }
+
         for (const TankEntity& e : test_enemies) {
             _pTankRenderer->Render(recordState, { e.GetMI() });
         }
@@ -108,4 +184,5 @@ struct GameLogic {
 private:
     bool _inputA = false, _inputB = false;
     std::unique_ptr<MFA::MeshRenderer> _pTankRenderer;
+    std::unique_ptr<MFA::MeshRenderer> _pBulletRenderer;
 };

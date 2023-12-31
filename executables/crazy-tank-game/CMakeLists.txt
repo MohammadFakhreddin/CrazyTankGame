@@ -11,6 +11,7 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/CrazyTankGameApp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Map.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Map.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay.hpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

@@ -76,7 +76,7 @@ private:
  //   std::unique_ptr<TankEntity> playerTank;
  //   std::unique_ptr<TankEntity> enemyTank;
 
-    std::unique_ptr<GameLogic> game;
+    std::unique_ptr<GameInstance> game;
 
     std::unique_ptr<Map> map{};
 };

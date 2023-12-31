@@ -113,15 +113,7 @@ CrazyTankGameApp::CrazyTankGameApp()
     }
 
 	{// Tank model
-		//playerTank = std::make_unique<TankEntity>(*tankRenderer);
-		//enemyTank = std::make_unique<TankEntity>(*tankRenderer, glm::vec2{ 2.f, 2.f });
-		game = std::make_unique<GameLogic>(std::make_unique<MeshRenderer>(
-			shadingPipeline,
-			Importer::GLTF_Model(Path::Instance->Get("models/test/tank_2.glb")),
-			errorTexture,
-			true,
-			glm::vec4{ 0.0f, 0.25f, 0.0f, 1.0f }
-		));
+		game = std::make_unique<GameInstance>(shadingPipeline, errorTexture);
 
 		game->add_test_enemies();
 		game->add_test_enemies();
@@ -237,24 +229,6 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 	ui->Update();
 
 	{// Player matrix
-		//float const inputMagnitude = glm::length(inputAxis);
-
-		//if (inputMagnitude > glm::epsilon<float>()) {
-		//	playerTank->baseAngle = fmodf(playerTank->baseAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
-		//	playerTank->flatPosition += playerTank->BaseDir() * inputAxis.y * playerSpeed * deltaTimeSec;
-		//}
-
-		//if (inputA) {
-		//	playerTank->headAngle += deltaTimeSec * tankHeadAngularSpeed;
-		//}
-
-		//if (inputB) {
-		//	playerTank->headAngle -= deltaTimeSec * tankHeadAngularSpeed;
-		//}
-
-		//playerTank->UpdateMI();
-		//enemyTank->AimAt(playerTank->flatPosition - enemyTank->flatPosition);
-		//enemyTank->UpdateMI();
 		game->Update(deltaTimeSec, inputAxis, inputA, inputB);
 	}
 }
@@ -278,8 +252,6 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	//tankRenderer->Render(recordState, { game->player.GetMI() });
-	//tankRenderer->Render(recordState, { enemyTank->GetMI() });
 	game->Render(recordState);
 
 	// map->Render(recordState);
