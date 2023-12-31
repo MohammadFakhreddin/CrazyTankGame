@@ -122,6 +122,12 @@ CrazyTankGameApp::CrazyTankGameApp()
 			true,
 			glm::vec4{ 0.0f, 0.25f, 0.0f, 1.0f }
 		));
+
+		game->add_test_enemies();
+		game->add_test_enemies();
+		game->add_test_enemies();
+		game->add_test_enemies();
+		game->add_test_enemies();
 	}
 
 	{

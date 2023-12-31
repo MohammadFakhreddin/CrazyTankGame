@@ -55,8 +55,16 @@ struct GameLogic {
     static constexpr float PLAYER_HEAD_TURN_SPEED = glm::pi<float>();
     TankEntity player;
 
+    std::list<TankEntity> test_enemies;
+
     GameLogic(std::unique_ptr<MFA::MeshRenderer> pTankRenderer) : player(*pTankRenderer) {
         _pTankRenderer = std::move(pTankRenderer);
+    }
+
+    void add_test_enemies() {
+        float new_x = float(rand() % 1500) * 1e-2f - 7.5f;
+        float new_y = float(rand() % 1500) * 1e-2f - 7.5f;
+        test_enemies.emplace_back(*_pTankRenderer, glm::vec2{ new_x, new_y });
     }
 
     void reset() {
@@ -81,12 +89,20 @@ struct GameLogic {
 
         player.UpdateMI();
 
+        for (TankEntity& e : test_enemies) {
+            e.AimAt(player.flatPosition - e.flatPosition);
+            e.UpdateMI();
+        }
+
         _inputA = inputA;
         _inputB = inputB;
     }
 
     void Render(MFA::RT::CommandRecordState& recordState) {
         _pTankRenderer->Render(recordState, { player.GetMI() });
+        for (const TankEntity& e : test_enemies) {
+            _pTankRenderer->Render(recordState, { e.GetMI() });
+        }
     }
 
 private:
