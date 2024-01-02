@@ -1,0 +1,35 @@
+#include "AABB2D.hpp"
+
+//-----------------------------------------------------------------------
+
+bool AABB2D::Overlap(AABB2D const& other)
+{
+    //https://stackoverflow.com/questions/20925818/algorithm-to-check-if-two-boxes-overlap
+    return	IsOverlapping1D(min.x, max.x, other.min.x, other.max.x) &&
+            IsOverlapping1D(min.y, max.y, other.min.y, other.max.y);
+}
+
+//-----------------------------------------------------------------------
+
+void AABB2D::Min(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMin)
+{
+    outMin.x = std::min(a.x, b.x);
+    outMin.y = std::min(a.y, b.y);
+}
+
+//-----------------------------------------------------------------------
+
+void AABB2D::Max(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMax)
+{
+    outMax.x = std::max(a.x, b.x);
+    outMax.y = std::max(a.y, b.y);
+}
+
+//-----------------------------------------------------------------------
+
+bool AABB2D::IsOverlapping1D(double const& min1, double const& max1, double const& min2, double const& max2)
+{
+    return max1 >= min2 && max2 >= min1;
+}
+
+//-----------------------------------------------------------------------
