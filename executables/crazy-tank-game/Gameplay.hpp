@@ -16,6 +16,7 @@ struct TankEntity {
     TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initHA = 0.f, float initScale = 0.1f) {
         _meshInstance = std::make_unique<MFA::MeshInstance>(meshRenderer);
         _headNode = _meshInstance->FindNode("Head");
+        _meshInstance->FindNode("Tip");
         MFA_ASSERT(_headNode != nullptr);
 
         flatPosition = initPos;
@@ -90,9 +91,9 @@ private:
 };
 
 struct GameInstance {
-    static constexpr float PLAYER_SPEED = 10.0f;
-    static constexpr float PLAYER_TURN_SPEED = glm::pi<float>();
-    static constexpr float PLAYER_HEAD_TURN_SPEED = glm::pi<float>();
+    static constexpr float PLAYER_SPEED = 4.0f;
+    static constexpr float PLAYER_TURN_SPEED = glm::quarter_pi<float>();
+    static constexpr float PLAYER_HEAD_TURN_SPEED = glm::half_pi<float>();
     TankEntity player;
     std::list<BulletEntity> test_player_bullets;
 
@@ -129,16 +130,13 @@ struct GameInstance {
     }
 
     void Update(float delta, const glm::vec2& joystickInp, bool inputA, bool inputB) {
-        float const inputMagnitude = glm::length(joystickInp);
+        player.flatPosition += player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
 
         if (!inputA) {
-            if (inputMagnitude > glm::epsilon<float>()) {
-                player.baseAngle = fmodf(player.baseAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
-                player.flatPosition += player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
-            }
+            player.baseAngle = fmodf(player.baseAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
         }
         else {
-            player.headAngle = fmodf(player.headAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
+            player.headAngle = fmodf(player.headAngle + joystickInp.x * PLAYER_HEAD_TURN_SPEED * delta, glm::two_pi<float>());
         }
 
         if (!inputA && _inputA) {
@@ -157,7 +155,7 @@ struct GameInstance {
 
         std::vector<std::list<BulletEntity>::iterator> toRemove;
         for (std::list<BulletEntity>::iterator it = test_player_bullets.begin(); it != test_player_bullets.end(); ++it) {
-            it->flatPosition += it->BaseDir() * 20.f * delta;
+            it->flatPosition += it->BaseDir() * 10.f * delta;
             it->lifetimer -= delta;
             if (it->lifetimer <= 0) {
                 toRemove.emplace_back(it);

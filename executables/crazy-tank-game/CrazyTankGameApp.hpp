@@ -61,20 +61,9 @@ private:
     std::shared_ptr<MFA::RT::SamplerGroup> defaultSampler{};
     std::shared_ptr<MFA::RT::GpuTexture> errorTexture{};
 
-    // Temporary
-    //std::shared_ptr<MFA::MeshRenderer> tankRenderer{};
-
     glm::vec2 inputAxis{};
     bool inputA{};
     bool inputB{};
-    
- //   float playerSpeed = 10.0f;
- //   
-	//float playerAngularSpeed = glm::pi<float>();
- //   float tankHeadAngularSpeed = glm::pi<float>();
-
- //   std::unique_ptr<TankEntity> playerTank;
- //   std::unique_ptr<TankEntity> enemyTank;
 
     std::unique_ptr<GameInstance> game;
 
