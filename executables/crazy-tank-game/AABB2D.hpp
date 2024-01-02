@@ -6,14 +6,14 @@ class AABB2D
 {
 public:
       
-    glm::dvec2 min{};
-    glm::dvec2 max{};
+    glm::vec2 min{};
+    glm::vec2 max{};
 
     bool Overlap(AABB2D const& other);
 
-    static void Min(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMin) ;
+    static void Min(glm::vec2 const& a, glm::vec2 const& b, glm::vec2& outMin) ;
 
-    static void Max(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMax) ;
+    static void Max(glm::vec2 const& a, glm::vec2 const& b, glm::vec2& outMax) ;
 
 private:
 

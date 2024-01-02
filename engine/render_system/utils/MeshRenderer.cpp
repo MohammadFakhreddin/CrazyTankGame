@@ -49,9 +49,7 @@ namespace MFA
 
 		_indexCount = model->mesh->GetIndexCount();
 		_indices = model->mesh->GetIndexData();
-
-		GenerateCollisionTriangles(*model);
-
+		
 		RB::EndAndSubmitSingleTimeCommand(
 			device->GetVkDevice(),
 			device->GetGraphicCommandPool(),
@@ -325,41 +323,6 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void MeshRenderer::GenerateCollisionTriangles(AS::GLTF::Model const& model)
-	{
-		_collisionTriangles = {};
-
-		auto const& mesh = model.mesh;
-
-		auto const* indices = mesh->GetIndexData()->As<AS::GLTF::Index>();
-		auto const indicesCount = mesh->GetIndexCount();
-
-		auto const* vertices = mesh->GetVertexData()->As<AS::GLTF::Vertex>();
-
-		MFA_ASSERT(indicesCount % 3 == 0);
-
-		int faceCount = static_cast<int>(indicesCount) / 3;
-		// TODO: This chunk of code is very useful. We need a helper function from it
-		for (int i = 0; i < faceCount; ++i)
-		{
-			auto const idx0 = indices[3 * i];
-			auto const idx1 = indices[3 * i + 1];
-			auto const idx2 = indices[3 * i + 2];
-
-			auto const& vertex0 = vertices[idx0];
-			auto const& vertex1 = vertices[idx1];
-			auto const& vertex2 = vertices[idx2];
-
-			glm::dvec3 const v0Pos = vertex0.position;
-			glm::dvec3 const v1Pos = vertex1.position;
-			glm::dvec3 const v2Pos = vertex2.position;
-
-			_collisionTriangles.emplace_back(Collision::GenerateCollisionTriangle(v0Pos, v1Pos, v2Pos));
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
 	void MeshRenderer::DrawSubMesh(
 		RT::CommandRecordState& recordState,
 		int const subMeshIdx,
@@ -412,29 +375,6 @@ namespace MFA
 		{
 			DrawNode(recordState, _meshData->nodes[child], transform);
 		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	[[nodiscard]]
-	std::vector<CollisionTriangle> MeshRenderer::GetCollisionTriangles(glm::mat4 const& model) const noexcept
-	{
-		auto copy = _collisionTriangles;
-		for (auto& triangle : copy)
-		{
-			triangle.normal = glm::normalize(model * glm::vec4{ triangle.normal, 0.0f });
-			triangle.center = model * glm::vec4{ triangle.center, 1.0f };
-
-			for (auto& edgeNormal : triangle.edgeNormals)
-			{
-				edgeNormal = glm::normalize(model * glm::vec4{ edgeNormal, 0.0f });
-			}
-			for (auto& edgeVertex : triangle.edgeVertices)
-			{
-				edgeVertex = model * glm::vec4{ edgeVertex, 1.0f };
-			}
-		}
-		return copy;
 	}
 
 	//-------------------------------------------------------------------------------------------------

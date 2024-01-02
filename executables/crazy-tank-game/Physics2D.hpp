@@ -5,6 +5,9 @@
 #include <functional>
 #include <glm/vec2.hpp>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/hash.hpp"
+
 // TODO: Instead of having static and non static, I can only have one instance or we can just use layers as separator
 // TODO: Each layer probably should be on a separate map maybe just to do less query or maybe it may not help at all
 class Physics2D
@@ -24,6 +27,48 @@ public:
         Sphere,
         Polygon
     };
+
+private:
+
+    struct Sphere
+    {
+        glm::vec2 center;
+        float radius;
+    };
+
+    struct Box
+    {
+        glm::vec2 v0{};
+        glm::vec2 v1{};
+        glm::vec2 v2{};
+        glm::vec2 v3{};
+    };
+
+    //struct Polygon
+    //{
+    //    glm::vec2 vertices;
+    //};
+
+    struct Item
+    {
+        explicit Item() {}
+        ~Item() = default;
+
+        EntityID id{};
+        Type type = Type::Invalid;
+        bool isStatic = true;
+        AABB2D aabb{};
+        OnHit onHit{};
+        Layer layer{};
+        union
+        {
+            Sphere sphere;
+            Box box{};
+        };
+        //Polygon polygon;
+    };
+
+public:
 
     explicit Physics2D();
 
@@ -46,7 +91,7 @@ public:
 		glm::vec2 const& v3
     );
 
-    bool MovePolygon(EntityID id, std::vector<glm::vec2> const& vertices);
+    //bool MovePolygon(EntityID id, std::vector<glm::vec2> const& vertices);
 
     void Update();
 
@@ -65,7 +110,7 @@ public:
         glm::vec2 origin,
         glm::vec2 direction,
         float maxDistance,
-        OnHit onHit
+        HitInfo& outHitInfo
     );
 
     // TODO: Sphere cast
@@ -78,53 +123,18 @@ private:
 
     [[nodiscard]]
     EntityID AllocateID();
-
-    struct Sphere
-    {
-        glm::vec2 center;
-        float radius;
-    };
-
-    struct Box
-    {
-        glm::vec2 v0{};
-        glm::vec2 v1{};
-        glm::vec2 v2{};
-        glm::vec2 v3{};
-    };
-
-    struct Polygon
-    {
-        std::vector<glm::vec2> vertices;
-    };
-
-    struct Item
-    {
-        EntityID id{};
-        Type type = Type::Invalid;
-        bool isStatic = true;
-        AABB2D aabb{};
-        OnHit onHit{};
-        Layer layer {};
-    	union 
-        {
-            Sphere sphere;
-            Box box{};
-            Polygon polygon;
-        };
-    };
-
+    
     bool _isStaticGridDirty = false;
     bool _isNonStaticGridDirty = false;
 
-    std::unordered_map<int, Item> _staticItemMap{};
-    std::unordered_map<int, Item> _nonStaticItemMap{};
+    std::unordered_map<EntityID, Item> _staticItemMap{};
+    std::unordered_map<EntityID, Item> _nonStaticItemMap{};
 
     glm::vec2 _nonStaticCellSize{};
-    std::unordered_map<glm::ivec2, std::vector<Item&>> _nonStaticGrid{};
+    std::unordered_map<glm::ivec2, std::vector<Item *>> _nonStaticGrid{};
 
     glm::vec2 _staticCellSize{};
-    std::unordered_map<glm::ivec2, std::vector<Item&>> _staticGrid{};
+    std::unordered_map<glm::ivec2, std::vector<Item *>> _staticGrid{};
 
     EntityID _nextId{};
 };

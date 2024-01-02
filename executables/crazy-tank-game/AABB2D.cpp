@@ -11,7 +11,7 @@ bool AABB2D::Overlap(AABB2D const& other)
 
 //-----------------------------------------------------------------------
 
-void AABB2D::Min(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMin)
+void AABB2D::Min(glm::vec2 const& a, glm::vec2 const& b, glm::vec2& outMin)
 {
     outMin.x = std::min(a.x, b.x);
     outMin.y = std::min(a.y, b.y);
@@ -19,7 +19,7 @@ void AABB2D::Min(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMin)
 
 //-----------------------------------------------------------------------
 
-void AABB2D::Max(glm::dvec2 const& a, glm::dvec2 const& b, glm::dvec2& outMax)
+void AABB2D::Max(glm::vec2 const& a, glm::vec2 const& b, glm::vec2& outMax)
 {
     outMax.x = std::max(a.x, b.x);
     outMax.y = std::max(a.y, b.y);
