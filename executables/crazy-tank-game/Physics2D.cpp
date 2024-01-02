@@ -114,7 +114,7 @@ bool Physics2D::MoveSphere(EntityID const id, glm::vec2 const & center, float co
 //-----------------------------------------------------------------------
 
 bool Physics2D::MoveBox(
-    EntityID id, 
+    EntityID const id, 
     glm::vec2 const& v0, 
 	glm::vec2 const& v1, 
 	glm::vec2 const& v2, 
@@ -148,8 +148,95 @@ bool Physics2D::MoveBox(
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::MovePolygon(EntityID id, std::vector<glm::vec2> const& vertices)
+bool Physics2D::MovePolygon(EntityID const id, std::vector<glm::vec2> const& vertices)
 {
+    auto const findResult = _nonStaticItemMap.find(id);
+    if (findResult != _nonStaticItemMap.end())
+    {
+        _isNonStaticGridDirty = true;
+
+        auto& polygon = findResult->second.polygon;
+        polygon.vertices = vertices;
+        
+        auto& aabb = findResult->second.aabb;
+        AABB2D::Min(polygon.vertices[0], polygon.vertices[1], aabb.min);
+        AABB2D::Max(polygon.vertices[0], polygon.vertices[1], aabb.max);
+
+        for (int i = 2; i < static_cast<int>(polygon.vertices.size()); ++i)
+        {
+            AABB2D::Min(polygon.vertices[i], aabb.min, aabb.min);
+            AABB2D::Max(polygon.vertices[i], aabb.max, aabb.max);
+        }
+
+        return true;
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------
+
+void Physics2D::Update()
+{
+    if (_isNonStaticGridDirty == true)
+    {
+        for (auto [key, item] : _nonStaticItemMap)
+        {
+            _nonStaticCellSize += item.aabb.max - item.aabb.min;
+        }
+        _nonStaticCellSize /= static_cast<double>(_nonStaticItemMap.size());
+        _nonStaticCellSize *= 2.0f;
+
+        _nonStaticGrid.clear();
+        for (auto [key, item] : _nonStaticItemMap)
+        {
+            auto const min = item.aabb.min;
+            auto const max = item.aabb.max;
+
+            int minX = static_cast<int>(std::floor(min.x / _nonStaticCellSize.x));
+            int minY = static_cast<int>(std::floor(min.y / _nonStaticCellSize.y));
+            
+            int maxX = static_cast<int>(std::ceil(max.x / _nonStaticCellSize.x));
+            int maxY = static_cast<int>(std::ceil(max.y / _nonStaticCellSize.y));
+            
+            for (int x = minX; x <= maxX; ++x)
+            {
+                for (int y = minY; y <= maxY; ++y)
+                {
+					_nonStaticGrid[glm::ivec2{ x, y }].emplace_back(item);
+                }
+            }
+        }
+    }
+    if (_isStaticGridDirty == true)
+    {
+        for (auto [key, item] : _staticItemMap)
+        {
+            _staticCellSize += item.aabb.max - item.aabb.min;
+        }
+        _staticCellSize /= static_cast<double>(_staticItemMap.size());
+        _staticCellSize *= 2.0f;
+
+        _staticGrid.clear();
+        for (auto [key, item] : _staticItemMap)
+        {
+            auto const min = item.aabb.min;
+            auto const max = item.aabb.max;
+
+            int minX = static_cast<int>(std::floor(min.x / _staticCellSize.x));
+            int minY = static_cast<int>(std::floor(min.y / _staticCellSize.y));
+
+            int maxX = static_cast<int>(std::ceil(max.x / _staticCellSize.x));
+            int maxY = static_cast<int>(std::ceil(max.y / _staticCellSize.y));
+
+            for (int x = minX; x <= maxX; ++x)
+            {
+                for (int y = minY; y <= maxY; ++y)
+                {
+                    _staticGrid[glm::ivec2{ x, y }].emplace_back(item);
+                }
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------
@@ -162,12 +249,6 @@ bool Physics2D::Raycast(
 	float maxDistance, 
 	OnHit onHit
 )
-{
-}
-
-//-----------------------------------------------------------------------
-
-void Physics2D::Update()
 {
 }
 

@@ -5,14 +5,8 @@
 #include <functional>
 #include <glm/vec2.hpp>
 
-//enum class Layers : uint32_t // We can have up to 32 layers
-//{
-//    Invalid = 1 << 0,
-//    Wall = 1 << 1,
-//    Tank = 1 << 2,
-//    Shell = 1 << 3
-//};
-
+// TODO: Instead of having static and non static, I can only have one instance or we can just use layers as separator
+// TODO: Each layer probably should be on a separate map maybe just to do less query or maybe it may not help at all
 class Physics2D
 {
 public:
@@ -54,6 +48,8 @@ public:
 
     bool MovePolygon(EntityID id, std::vector<glm::vec2> const& vertices);
 
+    void Update();
+
     struct HitInfo
     {
         int layer{};
@@ -75,9 +71,7 @@ public:
     // TODO: Sphere cast
 
     // TODO: Raycast for moving polygons
-
-    void Update();
-
+    
     inline static Physics2D * Instance = nullptr;
 
 private:
@@ -126,10 +120,10 @@ private:
     std::unordered_map<int, Item> _staticItemMap{};
     std::unordered_map<int, Item> _nonStaticItemMap{};
 
-    std::vector<Item&> _staticItems{};
-    std::vector<Item&> _nonStaticItems{};
-
+    glm::vec2 _nonStaticCellSize{};
     std::unordered_map<glm::ivec2, std::vector<Item&>> _nonStaticGrid{};
+
+    glm::vec2 _staticCellSize{};
     std::unordered_map<glm::ivec2, std::vector<Item&>> _staticGrid{};
 
     EntityID _nextId{};
