@@ -23,9 +23,10 @@ public:
     enum class Type
     {
         Invalid,
-        AABB,
+        //AABB,
         Sphere,
-        Polygon
+        Box
+        //Polygon
     };
 
 private:
@@ -107,8 +108,8 @@ public:
     bool Raycast(
         int layerMask,
         EntityID excludeId,
-        glm::vec2 origin,
-        glm::vec2 direction,
+        glm::vec2 const & origin,
+        glm::vec2 const & direction,
         float maxDistance,
         HitInfo& outHitInfo
     );
@@ -123,6 +124,37 @@ private:
 
     [[nodiscard]]
     EntityID AllocateID();
+
+    [[nodiscard]]
+    static glm::vec2 OrthogonalDirection(glm::vec2 const& direction);
+
+    static bool RaySphereIntersection(
+        glm::vec2 const& rayOrigin, 
+        glm::vec2 const& rayDirection, 
+		float rayMaxDistance, 
+		Sphere const& sphere,
+        float & outDistance,
+		glm::vec2 & outNormal
+    );
+
+    static bool RayBoxIntersection(
+        glm::vec2 const& rayOrigin,
+        glm::vec2 const& rayDirection,
+        float rayMaxDistance,
+        Box const& box,
+        float & outDistance,
+        glm::vec2 & outNormal
+    );
+
+    static bool RayLineIntersection(
+        glm::vec2 const& rayOrigin,
+        glm::vec2 const& rayDirection,
+        float rayMaxDistance,
+        glm::vec2 const& lineV0,
+        glm::vec2 const& lineV1,
+        float& outDistance,
+        glm::vec2 & outNormal
+    );
     
     bool _isStaticGridDirty = false;
     bool _isNonStaticGridDirty = false;

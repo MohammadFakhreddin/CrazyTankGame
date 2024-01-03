@@ -1,7 +1,10 @@
 #include "Physics2D.hpp"
 
+#include "BedrockAssert.hpp"
+
 #include <set>
 #include <utility>
+#include <gtx/norm.inl>
 
 using ID = Physics2D::EntityID;
 
@@ -247,8 +250,8 @@ void Physics2D::Update()
 bool Physics2D::Raycast(
     int layerMask,
     EntityID excludeId,
-    glm::vec2 origin, 
-	glm::vec2 direction, 
+    glm::vec2 const & origin, 
+	glm::vec2 const & direction, 
 	float maxDistance, 
     HitInfo& outHitInfo
 )
@@ -300,17 +303,73 @@ bool Physics2D::Raycast(
         }
     }
 
-    bool success = false;
+    bool hit = false;
+    outHitInfo.hitDistance = std::numeric_limits<float>().max();
 
     for (auto * item : set)
     {
 	    if ((item->layer & layerMask) > 0 && item->aabb.Overlap(aabb) == true)
 	    {
-		    // TODO
+		    switch (item->type)
+		    {
+				case Type::Sphere:
+				{
+                    float distance{};
+                    glm::vec2 normal{};
+                    bool const hasCollision = RaySphereIntersection(
+                        origin,
+                        direction,
+                        maxDistance,
+                        item->sphere,
+                        distance,
+                        normal
+                    );
+                    if (hasCollision == true && distance < outHitInfo.hitDistance)
+                    {
+                        hit = true;
+                        outHitInfo.layer = item->layer;
+                        outHitInfo.onHit = item->onHit;
+                        outHitInfo.hitNormal = normal;
+                        outHitInfo.hitDistance = distance;
+                    }
+					break;	
+				}
+				case Type::Box:
+                {
+                    float distance{};
+                    glm::vec2 normal{};
+                    bool const hasCollision = RayBoxIntersection(
+                        origin,
+                        direction,
+                        maxDistance,
+                        item->box,
+                        distance,
+                        normal
+                    );
+                    if (hasCollision == true && distance < outHitInfo.hitDistance)
+                    {
+                        hit = true;
+                        outHitInfo.layer = item->layer;
+                        outHitInfo.onHit = item->onHit;
+                        outHitInfo.hitNormal = normal;
+                        outHitInfo.hitDistance = distance;
+                    }
+                    break;
+                }
+				default:
+				{
+                    MFA_LOG_ERROR("Item type not handled");
+				}
+		    }
 	    }
     }
 
-    return success;
+    if (hit == true)
+    {
+        outHitInfo.hitPoint = origin + direction * outHitInfo.hitDistance;
+    }
+
+    return hit;
 }
 
 //-----------------------------------------------------------------------
@@ -320,6 +379,209 @@ ID Physics2D::AllocateID()
     auto const id = _nextId;
     ++_nextId;
     return id;
+}
+
+//-----------------------------------------------------------------------
+
+glm::vec2 Physics2D::OrthogonalDirection(glm::vec2 const& direction)
+{
+    glm::vec3 const normal3 = glm::cross(
+        glm::vec3 {direction.x, 0.0f, direction.y},
+        glm::vec3 {0.0f, 1.0f, 0.0f}
+    );
+    MFA_ASSERT((std::abs(normal3.y) - glm::epsilon<float>() < 0));
+    auto const normal2 = glm::vec2{normal3.x, normal3.z};
+    return normal2;
+}
+
+//-----------------------------------------------------------------------
+
+bool Physics2D::RaySphereIntersection(
+    glm::vec2 const& rayOrigin,
+    glm::vec2 const& rayDirection,
+    float const rayMaxDistance,
+    Sphere const& sphere,
+    float& outDistance,
+    glm::vec2& outNormal
+)
+{
+    glm::vec2 const& P = rayOrigin;
+    glm::vec2 const D = rayDirection * rayMaxDistance;
+    glm::vec2 const& F = sphere.center;
+    float const & r = sphere.radius;
+
+    float const A = glm::dot(D, D);
+    if (std::abs(A) < glm::epsilon<float>())
+    {
+        return false;
+    }
+
+	glm::vec2 const PMinF = P - F;
+	float const B = 2.0f * glm::dot(D, PMinF);
+    float const C = glm::dot(PMinF, PMinF) - (r * r);
+
+    float const B2Min4AC = (B * B) - (4.0f * A * C);
+    if (B2Min4AC < 0.0f)
+    {
+        return false;
+    }
+
+	auto const TwoA = 2.0f * A;
+
+    auto const t0 = (-B + B2Min4AC) / TwoA;
+    auto const t1 = (-B - B2Min4AC) / TwoA;
+
+    auto t = -1.0f;
+
+    if (t0 > 0.0f)
+    {
+        t = std::min(t0, t);
+    }
+    if (t1 > 0.0f)
+    {
+        t = std::min(t1, t);
+    }
+
+	outDistance = t * rayMaxDistance;
+    return t >= 0.0f && t <= 1.0f;
+}
+
+//-----------------------------------------------------------------------
+
+bool Physics2D::RayBoxIntersection(
+    glm::vec2 const& rayOrigin, 
+    glm::vec2 const& rayDirection, 
+	float rayMaxDistance,
+	Box const& box, 
+    float& outDistance,
+    glm::vec2& outNormal
+)
+{
+    bool hasCollision = false;
+
+    outDistance = rayMaxDistance + 1.0f;
+
+    {
+        float distance{};
+        glm::vec2 normal{};
+        bool const lineHasCollision = RayLineIntersection(
+            rayOrigin,
+            rayDirection,
+            rayMaxDistance,
+            box.v0,
+            box.v1,
+            distance,
+			normal  
+        );
+        if (lineHasCollision == true)
+        {
+            outDistance = distance;
+            outNormal = normal;
+            hasCollision = true;
+        }
+    }
+    {
+        float distance{};
+        glm::vec2 normal{};
+        bool const lineHasCollision = RayLineIntersection(
+            rayOrigin,
+            rayDirection,
+            rayMaxDistance,
+            box.v1,
+            box.v2,
+            distance,
+            normal
+        );
+        if (lineHasCollision == true && distance < outDistance)
+        {
+            outDistance = distance;
+            outNormal = normal;
+            hasCollision = true;
+        }
+    }
+    {
+        float distance{};
+        glm::vec2 normal{};
+        bool const lineHasCollision = RayLineIntersection(
+            rayOrigin,
+            rayDirection,
+            rayMaxDistance,
+            box.v2,
+            box.v3,
+            distance,
+            normal
+        );
+        if (lineHasCollision == true && distance < outDistance)
+        {
+            outDistance = distance;
+            outNormal = normal;
+            hasCollision = true;
+        }
+    }
+    {
+        float distance{};
+        glm::vec2 normal{};
+        bool const lineHasCollision = RayLineIntersection(
+            rayOrigin,
+            rayDirection,
+            rayMaxDistance,
+            box.v3,
+            box.v0,
+            distance,
+            normal
+        );
+        if (lineHasCollision == true && distance < outDistance)
+        {
+            outDistance = distance;
+            outNormal = normal;
+            hasCollision = true;
+        }
+    }
+
+    return hasCollision;
+}
+
+//-----------------------------------------------------------------------
+
+bool Physics2D::RayLineIntersection(
+    glm::vec2 const& rayOrigin, 
+    glm::vec2 const& rayDirection, 
+    float rayMaxDistance,
+	glm::vec2 const& lineV0, 
+    glm::vec2 const& lineV1,
+    float& outDistance,
+    glm::vec2& outNormal
+)
+{
+    glm::vec2 const n = OrthogonalDirection(lineV1 - lineV0);
+    glm::vec2 const & D = rayDirection * rayMaxDistance;
+    glm::vec2 const& P = rayOrigin;
+    glm::vec2 const& Q0 = lineV0;
+
+    float const DdotN = glm::dot(D, n);
+    if (DdotN < glm::epsilon<float>())
+    {
+        return false;
+    }
+
+    float const t1 = glm::dot((Q0 - P), n) / DdotN;
+    
+    if (t1 >= 0.0f && t1 < 1.0f)
+    {
+        outDistance = t1 * rayMaxDistance;
+        auto const Q = outDistance * rayDirection + rayOrigin;
+        auto const lineDiff = lineV1 - lineV0;
+        auto const lineDiff2 = glm::dot(lineDiff, lineDiff);
+        if (lineDiff2 < glm::epsilon<float>())
+        {
+            return false;
+        }
+
+        float const t2 = glm::dot(Q - lineV0, lineDiff) / lineDiff2;
+        return t2 <= 1.0f + glm::epsilon<float>() && t2 >= -glm::epsilon<float>();
+    }
+
+    return false;
 }
 
 //-----------------------------------------------------------------------
