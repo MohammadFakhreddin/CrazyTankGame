@@ -254,7 +254,7 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	game->Render(recordState);
 
-	// map->Render(recordState);
+	map->Render(recordState);
 
 	ui->Render(recordState, _deltaTimeSec);
 

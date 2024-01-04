@@ -13,16 +13,18 @@ struct TankEntity {
 
     TankEntity() {}
 
-    TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initHA = 0.f, float initScale = 0.1f) {
+    TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initHA = 0.f, float initScale = 0.3f) {
         _meshInstance = std::make_unique<MFA::MeshInstance>(meshRenderer);
         _headNode = _meshInstance->FindNode("Head");
-        _meshInstance->FindNode("Tip");
         MFA_ASSERT(_headNode != nullptr);
 
         flatPosition = initPos;
         baseAngle = initBA;
         headAngle = initHA;
         scale = initScale;
+
+        _shootPos = scale * _meshInstance->FindNode("Shoot")->transform.Getposition();
+
         UpdateMI();
     }
 
@@ -39,33 +41,38 @@ struct TankEntity {
     }
 
     glm::vec2 BaseDir() const {
-        return { sinf(baseAngle), cosf(baseAngle) };
+        return { -sinf(baseAngle), -cosf(baseAngle) };
     }
 
-    glm::vec2 HeadDir() const {
-        return { sinf(baseAngle + headAngle), cosf(baseAngle + headAngle) };
+    glm::vec2 ShootDir() const {
+        return { -sinf(baseAngle + headAngle), -cosf(baseAngle + headAngle) };
+    }
+
+    glm::vec3 ShootPos() const {
+        return glm::vec3{ flatPosition.x, 0.f, flatPosition.y } + glm::rotate(glm::angleAxis(baseAngle + headAngle, glm::vec3{0.0f, 1.f, 0.f}), _shootPos);
     }
 
     void AimAt(const glm::vec2 aim_dir) {
-        headAngle = fmodf(-glm::half_pi<float>() - atan2f(aim_dir.y, aim_dir.x) - baseAngle, glm::two_pi<float>());
+        headAngle = fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x) + baseAngle, glm::two_pi<float>());
     }
 
 private:
     std::unique_ptr<MFA::MeshInstance> _meshInstance{};
     MFA::Asset::GLTF::Node* _headNode = nullptr;
+    glm::vec3 _shootPos{};
 };
 
 struct BulletEntity {
-    glm::vec2 flatPosition{};
+    glm::vec3 position{};
     float baseAngle = 0.f, scale = 1.f;
     float lifetimer = 4.f;
 
     BulletEntity() {}
 
-    BulletEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initScale = 0.1f) {
+    BulletEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec3& initPos = {}, float initBA = 0.f, float initScale = 0.1f) {
         _meshInstance = std::make_unique<MFA::MeshInstance>(meshRenderer);
 
-        flatPosition = initPos;
+        position = initPos;
         baseAngle = initBA;
         scale = initScale;
         UpdateMI();
@@ -73,7 +80,7 @@ struct BulletEntity {
 
     void UpdateMI() {
         auto& transform = _meshInstance->GetTransform();
-        transform.Setposition({ flatPosition.x, 0.f, flatPosition.y });
+        transform.Setposition(position);
         transform.Setscale(glm::vec3{ scale });
         transform.SetQuaternion(glm::angleAxis(baseAngle, glm::vec3{ 0.f, 1.f, 0.f }));
     }
@@ -82,8 +89,8 @@ struct BulletEntity {
         return _meshInstance.get();
     }
 
-    glm::vec2 BaseDir() const {
-        return { -sinf(baseAngle), -cosf(baseAngle) };
+    glm::vec3 BaseDir() const {
+        return { sinf(baseAngle), 0.f, cosf(baseAngle) };
     }
 
 private:
@@ -92,8 +99,9 @@ private:
 
 struct GameInstance {
     static constexpr float PLAYER_SPEED = 4.0f;
-    static constexpr float PLAYER_TURN_SPEED = glm::quarter_pi<float>();
-    static constexpr float PLAYER_HEAD_TURN_SPEED = glm::half_pi<float>();
+    static constexpr float TEST_BULLET_SPEED = 10.0f;
+    static constexpr float PLAYER_TURN_SPEED = glm::half_pi<float>();
+    static constexpr float PLAYER_HEAD_TURN_SPEED = glm::pi<float>();
     TankEntity player;
     std::list<BulletEntity> test_player_bullets;
 
@@ -103,7 +111,7 @@ struct GameInstance {
         std::shared_ptr<MFA::RT::GpuTexture> errorTexture) {
         _pTankRenderer = std::make_unique<MFA::MeshRenderer>(
             pipeline,
-            MFA::Importer::GLTF_Model(MFA::Path::Instance->Get("models/test/tank_2.glb")),
+            MFA::Importer::GLTF_Model(MFA::Path::Instance->Get("models/player_tank.glb")),
             errorTexture,
             true,
             glm::vec4{ 0.0f, 0.25f, 0.0f, 1.0f }
@@ -140,7 +148,7 @@ struct GameInstance {
         }
 
         if (!inputA && _inputA) {
-            test_player_bullets.emplace_back(*_pBulletRenderer, player.flatPosition, player.baseAngle + player.headAngle, 0.1f);
+            test_player_bullets.emplace_back(*_pBulletRenderer, player.ShootPos(), player.baseAngle + player.headAngle, 0.1f);
         }
 
         player.UpdateMI();
@@ -155,7 +163,7 @@ struct GameInstance {
 
         std::vector<std::list<BulletEntity>::iterator> toRemove;
         for (std::list<BulletEntity>::iterator it = test_player_bullets.begin(); it != test_player_bullets.end(); ++it) {
-            it->flatPosition += it->BaseDir() * 10.f * delta;
+            it->position += it->BaseDir() * TEST_BULLET_SPEED * delta;
             it->lifetimer -= delta;
             if (it->lifetimer <= 0) {
                 toRemove.emplace_back(it);
