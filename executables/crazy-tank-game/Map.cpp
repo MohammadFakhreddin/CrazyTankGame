@@ -1,11 +1,13 @@
 #include "Map.hpp"
 
 #include "BedrockPath.hpp"
+#include "Layers.hpp"
+#include "Physics2D.hpp"
 
 //-----------------------------------------------------------------------
 
 Map::Map(
-    float width, float height,
+    float mapWidth, float mapHeight,
     int rows, int columns, int * walls,
     std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
     std::shared_ptr<MFA::RT::GpuTexture> errorTexture
@@ -17,13 +19,13 @@ Map::Map(
         cubeCpuModel, 
         errorTexture, 
         true, 
-        glm::vec4{ 1.0f, 0.0f, 0.0f, 0.5f }
+        glm::vec4{ 1.0f, 1.0f, 1.0f, 0.5f }
     );
     
     {
         _groundInstance = MFA::MeshInstance(*_groundRenderer);
         auto& transform = _groundInstance.GetTransform();
-        transform.Setscale(glm::vec3{ width * 0.5f, 0.1f, height * 0.5f });
+        transform.Setscale(glm::vec3{ mapWidth * 0.5f, 0.1f, mapHeight * 0.5f });
         transform.Setposition(glm::vec3{ 0.0f, -0.3f, 0.0f });
     }
 
@@ -36,13 +38,13 @@ Map::Map(
     );
 
     {
-        float const wallWidth = width / static_cast<float>(rows);
-        float const wallHeight = height / static_cast<float>(columns);
+        float const wallWidth = mapWidth / static_cast<float>(rows);
+        float const wallHeight = mapHeight / static_cast<float>(columns);
         float const halfWallWidth = wallWidth * 0.5f;
         float const halfWallHeight = wallHeight * 0.5f;
 
-        float startX = -width * 0.5f + halfWallWidth;
-        float startY = -height * 0.5f + halfWallHeight;
+        float startX = -mapWidth * 0.5f + halfWallWidth;
+        float startY = -mapHeight * 0.5f + halfWallHeight;
         for (int x = 0; x < rows; ++x)
         {
 	        for (int y = 0; y < columns; ++y)
@@ -54,10 +56,20 @@ Map::Map(
                     auto & transform = wallInstance.GetTransform();
                     transform.Setscale(glm::vec3{ halfWallWidth, 0.5f, halfWallHeight });
                     transform.Setposition(glm::vec3{ static_cast<float>(x) * wallWidth + startX, 0.3f, static_cast<float>(y) * wallHeight + startY });
+                    auto colliderId = Physics2D::Instance->Register(
+                        Physics2D::Type::Box, 
+                        Layer::WallLayer, 
+                        true, 
+                        nullptr
+                    );
+                    auto const v0 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, -1.0f, 1.0f };
+                    auto const v1 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, 1.0f, 1.0f };
+                    auto const v2 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
+                    auto const v3 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
+                    Physics2D::Instance->MoveBox(colliderId, v0, v1, v2, v3);
 		        }
 	        }
         }
-       /* _wallInstances = std::make_unique<MFA::MeshInstance>()*/
     }
 }
 

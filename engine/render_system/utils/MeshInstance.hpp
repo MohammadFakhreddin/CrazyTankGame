@@ -27,6 +27,8 @@ namespace MFA
         [[nodiscard]]
         Transform & GetTransform();
 
+        void SetTransform(const Transform& transform);
+
     private:
 
         Transform _transform{};

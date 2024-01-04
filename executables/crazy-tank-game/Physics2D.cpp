@@ -79,40 +79,61 @@ bool Physics2D::UnRegister(EntityID const id)
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::MoveAABB(EntityID const id, glm::vec2 const & min, glm::vec2 const & max)
-{
-    auto const findResult = _nonStaticItemMap.find(id);
-    if (findResult != _nonStaticItemMap.end())
-    {
-        _isNonStaticGridDirty = true;
-        auto & aabb = findResult->second.aabb;
-        aabb.min = min;
-        aabb.max = max;
-        return true;
-    }
-    return false;
-}
+//bool Physics2D::MoveAABB(EntityID const id, glm::vec2 const & min, glm::vec2 const & max)
+//{
+//    auto const findResult = _nonStaticItemMap.find(id);
+//    if (findResult != _nonStaticItemMap.end())
+//    {
+//        _isNonStaticGridDirty = true;
+//        auto & aabb = findResult->second.aabb;
+//        aabb.min = min;
+//        aabb.max = max;
+//        return true;
+//    }
+//    return false;
+//}
 
 //-----------------------------------------------------------------------
 
 bool Physics2D::MoveSphere(EntityID const id, glm::vec2 const & center, float const radius)
 {
-    auto const findResult = _nonStaticItemMap.find(id);
-    if (findResult != _nonStaticItemMap.end())
     {
-        _isNonStaticGridDirty = true;
+        auto const findResult = _nonStaticItemMap.find(id);
+        if (findResult != _nonStaticItemMap.end())
+        {
+            _isNonStaticGridDirty = true;
 
-    	auto& sphere = findResult->second.sphere;
-        sphere.center = center;
-        sphere.radius = radius;
+            auto& sphere = findResult->second.sphere;
+            sphere.center = center;
+            sphere.radius = radius;
 
-        auto& aabb = findResult->second.aabb;
-        aabb.min.x = center.x - radius;
-        aabb.min.y = center.y - radius;
-        aabb.max.x = center.x + radius;
-        aabb.max.y = center.y + radius;
+            auto& aabb = findResult->second.aabb;
+            aabb.min.x = center.x - radius;
+            aabb.min.y = center.y - radius;
+            aabb.max.x = center.x + radius;
+            aabb.max.y = center.y + radius;
 
-        return true;
+            return true;
+        }
+    }
+    {
+        auto const findResult = _staticItemMap.find(id);
+        if (findResult != _staticItemMap.end())
+        {
+            _isStaticGridDirty = true;
+
+            auto& sphere = findResult->second.sphere;
+            sphere.center = center;
+            sphere.radius = radius;
+
+            auto& aabb = findResult->second.aabb;
+            aabb.min.x = center.x - radius;
+            aabb.min.y = center.y - radius;
+            aabb.max.x = center.x + radius;
+            aabb.max.y = center.y + radius;
+
+            return true;
+        }
     }
     return false;
 }
@@ -127,27 +148,54 @@ bool Physics2D::MoveBox(
 	glm::vec2 const& v3
 )
 {
-    auto const findResult = _nonStaticItemMap.find(id);
-    if (findResult != _nonStaticItemMap.end())
-    {
-        _isNonStaticGridDirty = true;
+    // TODO: Remove duplicate code
+    {// Non static map
+        auto const findResult = _nonStaticItemMap.find(id);
+        if (findResult != _nonStaticItemMap.end())
+        {
+            _isNonStaticGridDirty = true;
 
-        auto& box = findResult->second.box;
-        box.v0 = v0;
-        box.v1 = v1;
-        box.v2 = v2;
-        box.v3 = v3;
+            auto& box = findResult->second.box;
+            box.v0 = v0;
+            box.v1 = v1;
+            box.v2 = v2;
+            box.v3 = v3;
 
-        auto& aabb = findResult->second.aabb;
-    	AABB2D::Min(v0, v1, aabb.min);
-        AABB2D::Min(aabb.min, v2, aabb.min);
-        AABB2D::Min(aabb.min, v3, aabb.min);
+            auto& aabb = findResult->second.aabb;
+            AABB2D::Min(v0, v1, aabb.min);
+            AABB2D::Min(aabb.min, v2, aabb.min);
+            AABB2D::Min(aabb.min, v3, aabb.min);
 
-        AABB2D::Max(v0, v1, aabb.max);
-        AABB2D::Max(aabb.max, v2, aabb.max);
-        AABB2D::Max(aabb.max, v3, aabb.max);
+            AABB2D::Max(v0, v1, aabb.max);
+            AABB2D::Max(aabb.max, v2, aabb.max);
+            AABB2D::Max(aabb.max, v3, aabb.max);
 
-        return true;
+            return true;
+        }
+    }
+    {// Static map
+        auto const findResult = _staticItemMap.find(id);
+        if (findResult != _staticItemMap.end())
+        {
+            _isStaticGridDirty = true;
+
+            auto& box = findResult->second.box;
+            box.v0 = v0;
+            box.v1 = v1;
+            box.v2 = v2;
+            box.v3 = v3;
+
+            auto& aabb = findResult->second.aabb;
+            AABB2D::Min(v0, v1, aabb.min);
+            AABB2D::Min(aabb.min, v2, aabb.min);
+            AABB2D::Min(aabb.min, v3, aabb.min);
+
+            AABB2D::Max(v0, v1, aabb.max);
+            AABB2D::Max(aabb.max, v2, aabb.max);
+            AABB2D::Max(aabb.max, v3, aabb.max);
+
+            return true;
+        }
     }
     return false;
 }
@@ -304,55 +352,55 @@ bool Physics2D::Raycast(
     }
 
     bool hit = false;
-    outHitInfo.hitDistance = std::numeric_limits<float>().max();
+    outHitInfo.hitTime = std::numeric_limits<float>().max();
 
     for (auto * item : set)
     {
-	    if ((item->layer & layerMask) > 0 && item->aabb.Overlap(aabb) == true)
+	    if (item->id != excludeId && (item->layer & layerMask) > 0 && item->aabb.Overlap(aabb) == true)
 	    {
 		    switch (item->type)
 		    {
 				case Type::Sphere:
 				{
-                    float distance{};
+                    float time{};
                     glm::vec2 normal{};
                     bool const hasCollision = RaySphereIntersection(
                         origin,
                         direction,
                         maxDistance,
                         item->sphere,
-                        distance,
+                        time,
                         normal
                     );
-                    if (hasCollision == true && distance < outHitInfo.hitDistance)
+                    if (hasCollision == true && time < outHitInfo.hitTime)
                     {
                         hit = true;
                         outHitInfo.layer = item->layer;
                         outHitInfo.onHit = item->onHit;
                         outHitInfo.hitNormal = normal;
-                        outHitInfo.hitDistance = distance;
+                        outHitInfo.hitTime = time;
                     }
 					break;	
 				}
 				case Type::Box:
                 {
-                    float distance{};
+                    float time{};
                     glm::vec2 normal{};
                     bool const hasCollision = RayBoxIntersection(
                         origin,
                         direction,
                         maxDistance,
                         item->box,
-                        distance,
+                        time,
                         normal
                     );
-                    if (hasCollision == true && distance < outHitInfo.hitDistance)
+                    if (hasCollision == true && time < outHitInfo.hitTime)
                     {
                         hit = true;
                         outHitInfo.layer = item->layer;
                         outHitInfo.onHit = item->onHit;
                         outHitInfo.hitNormal = normal;
-                        outHitInfo.hitDistance = distance;
+                        outHitInfo.hitTime = time;
                     }
                     break;
                 }
@@ -366,7 +414,7 @@ bool Physics2D::Raycast(
 
     if (hit == true)
     {
-        outHitInfo.hitPoint = origin + direction * outHitInfo.hitDistance;
+        outHitInfo.hitPoint = origin + direction * outHitInfo.hitTime;
     }
 
     return hit;
@@ -401,7 +449,7 @@ bool Physics2D::RaySphereIntersection(
     glm::vec2 const& rayDirection,
     float const rayMaxDistance,
     Sphere const& sphere,
-    float& outDistance,
+    float& outTime,
     glm::vec2& outNormal
 )
 {
@@ -442,7 +490,8 @@ bool Physics2D::RaySphereIntersection(
         t = std::min(t1, t);
     }
 
-	outDistance = t * rayMaxDistance;
+	outTime = t;
+    outNormal = rayOrigin + (t * rayMaxDistance) - F;
     return t >= 0.0f && t <= 1.0f;
 }
 
@@ -453,13 +502,13 @@ bool Physics2D::RayBoxIntersection(
     glm::vec2 const& rayDirection, 
 	float rayMaxDistance,
 	Box const& box, 
-    float& outDistance,
+    float& outTime,
     glm::vec2& outNormal
 )
 {
     bool hasCollision = false;
 
-    outDistance = rayMaxDistance + 1.0f;
+    outTime = rayMaxDistance + 1.0f;
 
     {
         float distance{};
@@ -475,7 +524,7 @@ bool Physics2D::RayBoxIntersection(
         );
         if (lineHasCollision == true)
         {
-            outDistance = distance;
+            outTime = distance;
             outNormal = normal;
             hasCollision = true;
         }
@@ -492,9 +541,9 @@ bool Physics2D::RayBoxIntersection(
             distance,
             normal
         );
-        if (lineHasCollision == true && distance < outDistance)
+        if (lineHasCollision == true && distance < outTime)
         {
-            outDistance = distance;
+            outTime = distance;
             outNormal = normal;
             hasCollision = true;
         }
@@ -511,9 +560,9 @@ bool Physics2D::RayBoxIntersection(
             distance,
             normal
         );
-        if (lineHasCollision == true && distance < outDistance)
+        if (lineHasCollision == true && distance < outTime)
         {
-            outDistance = distance;
+            outTime = distance;
             outNormal = normal;
             hasCollision = true;
         }
@@ -530,9 +579,9 @@ bool Physics2D::RayBoxIntersection(
             distance,
             normal
         );
-        if (lineHasCollision == true && distance < outDistance)
+        if (lineHasCollision == true && distance < outTime)
         {
-            outDistance = distance;
+            outTime = distance;
             outNormal = normal;
             hasCollision = true;
         }
@@ -549,11 +598,14 @@ bool Physics2D::RayLineIntersection(
     float rayMaxDistance,
 	glm::vec2 const& lineV0, 
     glm::vec2 const& lineV1,
-    float& outDistance,
+    float& outTime,
     glm::vec2& outNormal
 )
 {
     glm::vec2 const n = OrthogonalDirection(lineV1 - lineV0);
+
+    outNormal = n;
+
     glm::vec2 const & D = rayDirection * rayMaxDistance;
     glm::vec2 const& P = rayOrigin;
     glm::vec2 const& Q0 = lineV0;
@@ -565,11 +617,11 @@ bool Physics2D::RayLineIntersection(
     }
 
     float const t1 = glm::dot((Q0 - P), n) / DdotN;
-    
+    outTime = t1;
+
     if (t1 >= 0.0f && t1 < 1.0f)
     {
-        outDistance = t1 * rayMaxDistance;
-        auto const Q = outDistance * rayDirection + rayOrigin;
+        auto const Q = outTime * rayDirection + rayOrigin;
         auto const lineDiff = lineV1 - lineV0;
         auto const lineDiff2 = glm::dot(lineDiff, lineDiff);
         if (lineDiff2 < glm::epsilon<float>())

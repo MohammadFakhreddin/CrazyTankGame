@@ -80,7 +80,7 @@ public:
 
     bool UnRegister(EntityID id);
 
-    bool MoveAABB(EntityID id, glm::vec2 const & min, glm::vec2 const & max);
+    //bool MoveAABB(EntityID id, glm::vec2 const & min, glm::vec2 const & max);
 
     bool MoveSphere(EntityID id, glm::vec2 const & center, float radius);
 
@@ -101,7 +101,7 @@ public:
         int layer{};
         glm::vec2 hitPoint {};
         glm::vec2 hitNormal {};
-        float hitDistance{};
+        float hitTime{};
         OnHit onHit{};
     };
     [[nodiscard]]
@@ -133,7 +133,7 @@ private:
         glm::vec2 const& rayDirection, 
 		float rayMaxDistance, 
 		Sphere const& sphere,
-        float & outDistance,
+        float & outTime,
 		glm::vec2 & outNormal
     );
 
@@ -142,7 +142,7 @@ private:
         glm::vec2 const& rayDirection,
         float rayMaxDistance,
         Box const& box,
-        float & outDistance,
+        float & outTime,
         glm::vec2 & outNormal
     );
 
@@ -152,7 +152,7 @@ private:
         float rayMaxDistance,
         glm::vec2 const& lineV0,
         glm::vec2 const& lineV1,
-        float& outDistance,
+        float& outTime,
         glm::vec2 & outNormal
     );
     
