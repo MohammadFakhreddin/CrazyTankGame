@@ -115,6 +115,7 @@ android/local.properties
 .VSCodeCounter/*
 
 .vscode/*
+!.vscode/c_cpp_properties.json
 
 *.xcodeproj
 

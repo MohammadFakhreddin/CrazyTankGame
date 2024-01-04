@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include/c++/11/",
+                "/usr/include/clang/14/include/",
+                "/usr/include/x86_64-linux-gnu/c++/11",
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/engine/**",
+                "${workspaceFolder}/engine/bedrock/**",
+                "${workspaceFolder}/engine/render_system/**",
+                "${workspaceFolder}/engine/libs/imgui/**"
+            ],
+            "defines": [
+                "_DEBUG"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c20",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "${default}",
+            "compileCommands": ""
+        }
+    ],
+    "version": 4
+}
