@@ -64,9 +64,15 @@ Map::Map(
                     );
                     auto const v0 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, -1.0f, 1.0f };
                     auto const v1 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, 1.0f, 1.0f };
-                    auto const v2 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
-                    auto const v3 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
-                    Physics2D::Instance->MoveBox(colliderId, v0, v1, v2, v3);
+                    auto const v2 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
+                    auto const v3 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
+                    Physics2D::Instance->MoveBox(
+                        colliderId, 
+                        glm::vec2{ v0.x, v0.z }, 
+                        glm::vec2{ v1.x, v1.z }, 
+                        glm::vec2{ v2.x, v2.z }, 
+                        glm::vec2{ v3.x, v3.z }
+                    );
 		        }
 	        }
         }

@@ -7,6 +7,8 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/hash.hpp"
+#include "utils/LineRenderer.hpp"
+#include "utils/PointRenderer.hpp"
 
 // TODO: Instead of having static and non static, I can only have one instance or we can just use layers as separator
 // TODO: Each layer probably should be on a separate map maybe just to do less query or maybe it may not help at all
@@ -43,6 +45,8 @@ private:
         glm::vec2 v1{};
         glm::vec2 v2{};
         glm::vec2 v3{};
+
+        glm::vec2 center{};
     };
 
     //struct Polygon
@@ -71,7 +75,10 @@ private:
 
 public:
 
-    explicit Physics2D();
+    explicit Physics2D(
+        std::shared_ptr<MFA::PointRenderer> pointRenderer,
+        std::shared_ptr<MFA::LineRenderer> lineRenderer
+    );
 
     ~Physics2D();
 
@@ -95,6 +102,8 @@ public:
     //bool MovePolygon(EntityID id, std::vector<glm::vec2> const& vertices);
 
     void Update();
+
+    void Render(MFA::RT::CommandRecordState& recordState);
 
     struct HitInfo
     {
@@ -126,7 +135,7 @@ private:
     EntityID AllocateID();
 
     [[nodiscard]]
-    static glm::vec2 OrthogonalDirection(glm::vec2 const& direction);
+    static glm::vec2 OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v1, glm::vec2 const& center);
 
     static bool RaySphereIntersection(
         glm::vec2 const& rayOrigin, 
@@ -152,8 +161,8 @@ private:
         float rayMaxDistance,
         glm::vec2 const& lineV0,
         glm::vec2 const& lineV1,
-        float& outTime,
-        glm::vec2 & outNormal
+        glm::vec2 const& lineNormal,
+        float& outTime
     );
     
     bool _isStaticGridDirty = false;
@@ -169,4 +178,7 @@ private:
     std::unordered_map<glm::ivec2, std::vector<Item *>> _staticGrid{};
 
     EntityID _nextId{};
+
+    std::shared_ptr<MFA::PointRenderer> _pointRenderer{};
+    std::shared_ptr<MFA::LineRenderer> _lineRenderer{};
 };

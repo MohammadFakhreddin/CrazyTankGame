@@ -4,18 +4,20 @@
 
 #include <set>
 #include <utility>
-#include <gtx/norm.inl>
 
 using ID = Physics2D::EntityID;
 
 //-----------------------------------------------------------------------
 
-Physics2D::Physics2D()
+Physics2D::Physics2D(
+    std::shared_ptr<MFA::PointRenderer> pointRenderer, 
+    std::shared_ptr<MFA::LineRenderer> lineRenderer
+)
 {
-    Instance = this;
+    _pointRenderer = std::move(pointRenderer);
+    _lineRenderer = std::move(lineRenderer);
+	Instance = this;
 }
-
-//-----------------------------------------------------------------------
 
 Physics2D::~Physics2D()
 {
@@ -97,44 +99,41 @@ bool Physics2D::UnRegister(EntityID const id)
 
 bool Physics2D::MoveSphere(EntityID const id, glm::vec2 const & center, float const radius)
 {
-    {
+    Item* item = nullptr;
+
+	{
         auto const findResult = _nonStaticItemMap.find(id);
         if (findResult != _nonStaticItemMap.end())
         {
             _isNonStaticGridDirty = true;
-
-            auto& sphere = findResult->second.sphere;
-            sphere.center = center;
-            sphere.radius = radius;
-
-            auto& aabb = findResult->second.aabb;
-            aabb.min.x = center.x - radius;
-            aabb.min.y = center.y - radius;
-            aabb.max.x = center.x + radius;
-            aabb.max.y = center.y + radius;
-
-            return true;
+            item = &findResult->second;
         }
     }
-    {
+
+    if (item != nullptr)
+	{
         auto const findResult = _staticItemMap.find(id);
         if (findResult != _staticItemMap.end())
         {
             _isStaticGridDirty = true;
-
-            auto& sphere = findResult->second.sphere;
-            sphere.center = center;
-            sphere.radius = radius;
-
-            auto& aabb = findResult->second.aabb;
-            aabb.min.x = center.x - radius;
-            aabb.min.y = center.y - radius;
-            aabb.max.x = center.x + radius;
-            aabb.max.y = center.y + radius;
-
-            return true;
+            item = &findResult->second;
         }
     }
+
+    if (item != nullptr)
+    {
+        auto& sphere = item->sphere;
+        sphere.center = center;
+        sphere.radius = radius;
+
+        auto& aabb = item->aabb;
+        aabb.min.x = center.x - radius;
+        aabb.min.y = center.y - radius;
+        aabb.max.x = center.x + radius;
+        aabb.max.y = center.y + radius;
+        return true;
+    }
+
     return false;
 }
 
@@ -148,55 +147,46 @@ bool Physics2D::MoveBox(
 	glm::vec2 const& v3
 )
 {
-    // TODO: Remove duplicate code
+    Item* item = nullptr;
     {// Non static map
         auto const findResult = _nonStaticItemMap.find(id);
         if (findResult != _nonStaticItemMap.end())
         {
             _isNonStaticGridDirty = true;
-
-            auto& box = findResult->second.box;
-            box.v0 = v0;
-            box.v1 = v1;
-            box.v2 = v2;
-            box.v3 = v3;
-
-            auto& aabb = findResult->second.aabb;
-            AABB2D::Min(v0, v1, aabb.min);
-            AABB2D::Min(aabb.min, v2, aabb.min);
-            AABB2D::Min(aabb.min, v3, aabb.min);
-
-            AABB2D::Max(v0, v1, aabb.max);
-            AABB2D::Max(aabb.max, v2, aabb.max);
-            AABB2D::Max(aabb.max, v3, aabb.max);
-
-            return true;
+            item = &findResult->second;
         }
     }
+    if (item == nullptr)
     {// Static map
         auto const findResult = _staticItemMap.find(id);
         if (findResult != _staticItemMap.end())
         {
             _isStaticGridDirty = true;
-
-            auto& box = findResult->second.box;
-            box.v0 = v0;
-            box.v1 = v1;
-            box.v2 = v2;
-            box.v3 = v3;
-
-            auto& aabb = findResult->second.aabb;
-            AABB2D::Min(v0, v1, aabb.min);
-            AABB2D::Min(aabb.min, v2, aabb.min);
-            AABB2D::Min(aabb.min, v3, aabb.min);
-
-            AABB2D::Max(v0, v1, aabb.max);
-            AABB2D::Max(aabb.max, v2, aabb.max);
-            AABB2D::Max(aabb.max, v3, aabb.max);
-
-            return true;
+            item = &findResult->second;
         }
     }
+
+    if (item != nullptr)
+    {
+        auto& box = item->box;
+        box.v0 = v0;
+        box.v1 = v1;
+        box.v2 = v2;
+        box.v3 = v3;
+
+        box.center = (box.v0 + box.v1 + box.v2 + box.v3) * 0.25f;
+
+        auto& aabb = item->aabb;
+        AABB2D::Min(v0, v1, aabb.min);
+        AABB2D::Min(aabb.min, v2, aabb.min);
+        AABB2D::Min(aabb.min, v3, aabb.min);
+
+        AABB2D::Max(v0, v1, aabb.max);
+        AABB2D::Max(aabb.max, v2, aabb.max);
+        AABB2D::Max(aabb.max, v3, aabb.max);
+        return true;
+    }
+
     return false;
 }
 
@@ -295,6 +285,39 @@ void Physics2D::Update()
 
 //-----------------------------------------------------------------------
 
+void Physics2D::Render(MFA::RT::CommandRecordState& recordState)
+{
+    for (auto & [key, value] : _staticItemMap)
+    {
+	    if (value.type == Type::Box)
+	    {
+            auto const& box = value.box;
+            _lineRenderer->Draw(
+                recordState,
+                glm::vec3{ box.v0.x, 0.0f, box.v0.y },
+                glm::vec3{ box.v1.x, 0.0f, box.v1.y }
+            );
+            _lineRenderer->Draw(
+                recordState,
+                glm::vec3{ box.v1.x, 0.0f, box.v1.y },
+                glm::vec3{ box.v2.x, 0.0f, box.v2.y }
+            );
+            _lineRenderer->Draw(
+                recordState,
+                glm::vec3{ box.v2.x, 0.0f, box.v2.y },
+                glm::vec3{ box.v3.x, 0.0f, box.v3.y }
+            );
+            _lineRenderer->Draw(
+                recordState,
+                glm::vec3{ box.v3.x, 0.0f, box.v3.y },
+                glm::vec3{ box.v0.x, 0.0f, box.v0.y }
+            );
+	    }
+    }
+}
+
+//-----------------------------------------------------------------------
+
 bool Physics2D::Raycast(
     int layerMask,
     EntityID excludeId,
@@ -304,8 +327,8 @@ bool Physics2D::Raycast(
     HitInfo& outHitInfo
 )
 {
-    auto const startPos = origin;
-    auto const endPos = origin + direction * maxDistance;
+    auto const startPos = origin - direction * 1e-5f;
+    auto const endPos = origin + direction * (maxDistance + 1e-5f);
 
     glm::vec2 max{};
 	AABB2D::Max(startPos, endPos, max);
@@ -316,6 +339,16 @@ bool Physics2D::Raycast(
     AABB2D aabb{ .min = min, .max = max };
 
     std::set<Item*> set{};
+
+ /*   for (auto & item : _nonStaticItemMap)
+    {
+        set.insert(&item.second);
+    }
+
+    for (auto & item : _staticItemMap)
+    {
+        set.insert(&item.second);
+    }*/
 
     {// Static
         int const minX = static_cast<int>(std::floor(min.x / _staticCellSize.x));
@@ -356,65 +389,68 @@ bool Physics2D::Raycast(
 
     for (auto * item : set)
     {
-	    if (item->id != excludeId && (item->layer & layerMask) > 0 && item->aabb.Overlap(aabb) == true)
+	    if (item->id != excludeId && (item->layer & layerMask) > 0)
 	    {
-		    switch (item->type)
-		    {
-				case Type::Sphere:
-				{
-                    float time{};
-                    glm::vec2 normal{};
-                    bool const hasCollision = RaySphereIntersection(
-                        origin,
-                        direction,
-                        maxDistance,
-                        item->sphere,
-                        time,
-                        normal
-                    );
-                    if (hasCollision == true && time < outHitInfo.hitTime)
-                    {
-                        hit = true;
-                        outHitInfo.layer = item->layer;
-                        outHitInfo.onHit = item->onHit;
-                        outHitInfo.hitNormal = normal;
-                        outHitInfo.hitTime = time;
-                    }
-					break;	
-				}
-				case Type::Box:
+            if (item->aabb.Overlap(aabb) == true)
+            {
+                switch (item->type)
                 {
-                    float time{};
-                    glm::vec2 normal{};
-                    bool const hasCollision = RayBoxIntersection(
-                        origin,
-                        direction,
-                        maxDistance,
-                        item->box,
-                        time,
-                        normal
-                    );
-                    if (hasCollision == true && time < outHitInfo.hitTime)
-                    {
-                        hit = true;
-                        outHitInfo.layer = item->layer;
-                        outHitInfo.onHit = item->onHit;
-                        outHitInfo.hitNormal = normal;
-                        outHitInfo.hitTime = time;
-                    }
-                    break;
+	                case Type::Sphere:
+	                {
+	                    float time{};
+	                    glm::vec2 normal{};
+	                    bool const hasCollision = RaySphereIntersection(
+	                        origin,
+	                        direction,
+	                        maxDistance,
+	                        item->sphere,
+	                        time,
+	                        normal
+	                    );
+	                    if (hasCollision == true && time < outHitInfo.hitTime)
+	                    {
+	                        hit = true;
+	                        outHitInfo.layer = item->layer;
+	                        outHitInfo.onHit = item->onHit;
+	                        outHitInfo.hitNormal = normal;
+	                        outHitInfo.hitTime = time;
+	                    }
+	                    break;
+	                }
+	                case Type::Box:
+	                {
+	                    float time{};
+	                    glm::vec2 normal{};
+	                    bool const hasCollision = RayBoxIntersection(
+	                        origin,
+	                        direction,
+	                        maxDistance,
+	                        item->box,
+	                        time,
+	                        normal
+	                    );
+	                    if (hasCollision == true && time < outHitInfo.hitTime)
+	                    {
+	                        hit = true;
+	                        outHitInfo.layer = item->layer;
+	                        outHitInfo.onHit = item->onHit;
+	                        outHitInfo.hitNormal = normal;
+	                        outHitInfo.hitTime = time;
+	                    }
+	                    break;
+	                }
+	                default:
+	                {
+	                    MFA_LOG_ERROR("Item type not handled");
+	                }
                 }
-				default:
-				{
-                    MFA_LOG_ERROR("Item type not handled");
-				}
 		    }
 	    }
     }
 
     if (hit == true)
     {
-        outHitInfo.hitPoint = origin + direction * outHitInfo.hitTime;
+        outHitInfo.hitPoint = origin + (direction * outHitInfo.hitTime * maxDistance);
     }
 
     return hit;
@@ -431,14 +467,19 @@ ID Physics2D::AllocateID()
 
 //-----------------------------------------------------------------------
 
-glm::vec2 Physics2D::OrthogonalDirection(glm::vec2 const& direction)
+glm::vec2 Physics2D::OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v1, glm::vec2 const & center)
 {
+    auto const direction = v1 - v0;
     glm::vec3 const normal3 = glm::cross(
         glm::vec3 {direction.x, 0.0f, direction.y},
         glm::vec3 {0.0f, 1.0f, 0.0f}
     );
     MFA_ASSERT((std::abs(normal3.y) - glm::epsilon<float>() < 0));
-    auto const normal2 = glm::vec2{normal3.x, normal3.z};
+    auto normal2 = glm::vec2{normal3.x, normal3.z};
+    if (glm::dot(normal2, v0 - center) > 0)
+    {
+        normal2 = -normal2;
+    }
     return normal2;
 }
 
@@ -512,15 +553,15 @@ bool Physics2D::RayBoxIntersection(
 
     {
         float distance{};
-        glm::vec2 normal{};
+        glm::vec2 const normal = OrthogonalDirection(box.v1, box.v0, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
             rayDirection,
             rayMaxDistance,
             box.v0,
             box.v1,
-            distance,
-			normal  
+            normal,
+            distance
         );
         if (lineHasCollision == true)
         {
@@ -531,15 +572,15 @@ bool Physics2D::RayBoxIntersection(
     }
     {
         float distance{};
-        glm::vec2 normal{};
+        glm::vec2 const normal = OrthogonalDirection(box.v2, box.v1, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
             rayDirection,
             rayMaxDistance,
             box.v1,
             box.v2,
-            distance,
-            normal
+            normal,
+            distance
         );
         if (lineHasCollision == true && distance < outTime)
         {
@@ -550,15 +591,15 @@ bool Physics2D::RayBoxIntersection(
     }
     {
         float distance{};
-        glm::vec2 normal{};
+        glm::vec2 const normal = OrthogonalDirection(box.v3, box.v2, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
             rayDirection,
             rayMaxDistance,
             box.v2,
             box.v3,
-            distance,
-            normal
+            normal,
+            distance
         );
         if (lineHasCollision == true && distance < outTime)
         {
@@ -569,15 +610,15 @@ bool Physics2D::RayBoxIntersection(
     }
     {
         float distance{};
-        glm::vec2 normal{};
+        glm::vec2 const normal = OrthogonalDirection(box.v0, box.v3, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
             rayDirection,
             rayMaxDistance,
             box.v3,
             box.v0,
-            distance,
-            normal
+            normal,
+            distance
         );
         if (lineHasCollision == true && distance < outTime)
         {
@@ -593,25 +634,23 @@ bool Physics2D::RayBoxIntersection(
 //-----------------------------------------------------------------------
 
 bool Physics2D::RayLineIntersection(
-    glm::vec2 const& rayOrigin, 
-    glm::vec2 const& rayDirection, 
+    glm::vec2 const& rayOrigin,
+    glm::vec2 const& rayDirection,
     float rayMaxDistance,
-	glm::vec2 const& lineV0, 
+    glm::vec2 const& lineV0,
     glm::vec2 const& lineV1,
-    float& outTime,
-    glm::vec2& outNormal
+    glm::vec2 const& lineNormal,
+    float& outTime
 )
 {
-    glm::vec2 const n = OrthogonalDirection(lineV1 - lineV0);
-
-    outNormal = n;
+    auto const & n = lineNormal;
 
     glm::vec2 const & D = rayDirection * rayMaxDistance;
     glm::vec2 const& P = rayOrigin;
     glm::vec2 const& Q0 = lineV0;
 
     float const DdotN = glm::dot(D, n);
-    if (DdotN < glm::epsilon<float>())
+    if (DdotN <= 0.0f)
     {
         return false;
     }
@@ -624,13 +663,13 @@ bool Physics2D::RayLineIntersection(
         auto const Q = outTime * rayDirection + rayOrigin;
         auto const lineDiff = lineV1 - lineV0;
         auto const lineDiff2 = glm::dot(lineDiff, lineDiff);
-        if (lineDiff2 < glm::epsilon<float>())
+        if (lineDiff2 == 0.0f)
         {
             return false;
         }
 
         float const t2 = glm::dot(Q - lineV0, lineDiff) / lineDiff2;
-        return t2 <= 1.0f + glm::epsilon<float>() && t2 >= -glm::epsilon<float>();
+        return t2 <= 1.0f + 1e-5 && t2 >= -1e-5;
     }
 
     return false;

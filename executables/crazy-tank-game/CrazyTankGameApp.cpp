@@ -41,7 +41,9 @@ CrazyTankGameApp::CrazyTankGameApp()
 		}
 	);
 
-    camera = std::make_unique<ArcballCamera>();
+    auto arcBallCamera = std::make_unique<ArcballCamera>();
+	arcBallCamera->SetmaxDistance(30.0f);
+	camera = std::move(arcBallCamera);
 
 	swapChainResource = std::make_shared<SwapChainRenderResource>();
 	depthResource = std::make_shared<DepthRenderResource>();
@@ -114,7 +116,13 @@ CrazyTankGameApp::CrazyTankGameApp()
 		errorTexture = gpuTexture;
     }
 
-	physics2D = std::make_unique<Physics2D>();
+	pointPipeline = std::make_shared<PointPipeline>(displayRenderPass, cameraBuffer, 10000);
+	pointRenderer = std::make_shared<PointRenderer>(pointPipeline);
+
+	linePipeline = std::make_shared<LinePipeline>(displayRenderPass, cameraBuffer, 10000);
+	lineRenderer = std::make_shared<LineRenderer>(linePipeline);
+
+	physics2D = std::make_unique<Physics2D>(pointRenderer, lineRenderer);
 
 	{// Tank model
 		auto tankCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_2.glb"));
@@ -142,30 +150,26 @@ CrazyTankGameApp::CrazyTankGameApp()
 	{
 		std::vector<int> walls{
 			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-			1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
-			1, 0, 0, 0, 0, 1, 0, 0, 0, 1,
- 			1, 0, 1, 0, 0, 1, 0, 1, 0, 1,
-			1, 0, 1, 0, 0, 0, 0, 1, 0, 1,
-			1, 0, 1, 0, 0, 0, 0, 1, 0, 1,
-			1, 0, 1, 0, 1, 0, 0, 1, 0, 1,
-			1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
-			1, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+ 			1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+			1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+			1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+			1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		};
 		map = std::make_unique<Map>(15.0f, 15.0f, 10, 10, walls.data(), shadingPipeline, errorTexture);
 	}
 
-	pointPipeline = std::make_shared<PointPipeline>(displayRenderPass, cameraBuffer, 10000);
-	pointRenderer = std::make_shared<PointRenderer>(pointPipeline);
-
-	linePipeline = std::make_shared<LinePipeline>(displayRenderPass, cameraBuffer, 10000);
-	lineRenderer = std::make_shared<LineRenderer>(linePipeline);
 }
 
 //------------------------------------------------------------------------------------------------------
 
 CrazyTankGameApp::~CrazyTankGameApp()
 {
+	physics2D.reset();
 	lineRenderer.reset();
 	linePipeline.reset();
 	pointRenderer.reset();
@@ -254,6 +258,8 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 	ui->Update();
 
+	physics2D->Update();
+
 	{// Player matrix
 		float const inputMagnitude = glm::length(inputAxis);
 
@@ -262,6 +268,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 			auto& transformRef = playerInstance->GetTransform();
 			auto transformCopy = playerInstance->GetTransform();
 
+			float prevPlayerAngle = playerAngle;
 			playerAngle = fmodf(playerAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
 			glm::vec3 const playerDirection{ sinf(playerAngle), 0.f, cosf(playerAngle) };
 
@@ -275,6 +282,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 			Physics2D::HitInfo hitInfo{
 				.hitTime = 1000.0f
 			};
+
 			for (auto & point : tankCollider)
 			{
 				auto const prevPoint = transformRef.GetMatrix() * point;
@@ -285,11 +293,11 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 				{
 					auto const direction = vector / length;
 					Physics2D::HitInfo myHitInfo{};
-					auto const hit = Physics2D::Instance->Raycast(
+					auto const hit = physics2D->Raycast(
 						Layer::WallLayer,
 						-1,
-						prevPoint,
-						direction,
+						glm::vec2{ prevPoint.x, prevPoint.z },
+						glm::vec2{ direction.x, direction.z },
 						length,
 						myHitInfo
 					);
@@ -303,14 +311,24 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 					}
 				}
 			}
-			if (hasCollision == true)
-			{
-				newPosition = glm::mix(transformRef.Getposition(), newPosition, hitInfo.hitTime);
-				newAngle = glm::slerp(transformRef.Getrotation().GetQuaternion(), newAngle, hitInfo.hitTime);
-			}
 
-			transformRef.Setposition(newPosition);
-			transformRef.SetQuaternion(newAngle);
+			if (hasCollision == false)
+			{
+				//if (hasCollision == true)
+				//{
+				//	newPosition = glm::mix(transformRef.Getposition(), newPosition, hitInfo.hitTime - 1e-5f);
+				//	//newAngle = glm::slerp(transformRef.Getrotation().GetQuaternion(), newAngle, hitInfo.hitTime - 1e-5f);
+				//	playerAngle = glm::mix(prevPlayerAngle, playerAngle, hitInfo.hitTime - 1e-5);
+				//	newAngle = glm::angleAxis(playerAngle, glm::vec3{ 0.f, 1.f, 0.f });
+				//}
+
+				transformRef.Setposition(newPosition);
+				transformRef.SetQuaternion(newAngle);
+			}
+			else
+			{
+				playerAngle = prevPlayerAngle;
+			}
 		}
 
 		if (inputA == true)
@@ -347,8 +365,12 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	tankRenderer->Render(recordState, { playerInstance.get() });
 
-	map->Render(recordState);
+	if (renderMap == true)
+	{
+		map->Render(recordState);
+	}
 
+	if (renderPlayerCollider == true)
 	{// Player collider
 		for (auto const & point : tankCollider)
 		{
@@ -356,8 +378,13 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 		}
 	}
 
-	ui->Render(recordState, _deltaTimeSec);
+	if (renderPhysics == true)
+	{
+		physics2D->Render(recordState);
+	}
 
+	ui->Render(recordState, _deltaTimeSec);
+	
 	displayRenderPass->End(recordState);
 	device->EndCommandBuffer(recordState);
 
@@ -371,6 +398,8 @@ void CrazyTankGameApp::OnUI(float deltaTimeSec)
 {
 	ui->BeginWindow("Window");
 	ImGui::Text("Framerate: %f", 1.0f / deltaTimeSec);
+	ImGui::Checkbox("DEBUG render physics", &renderPhysics);
+	ImGui::Checkbox("DEBUG render map", &renderMap);
 	ui->EndWindow();
 }
 

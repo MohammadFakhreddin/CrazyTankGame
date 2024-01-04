@@ -100,4 +100,8 @@ private:
     std::unique_ptr<Map> map{};
 
     std::unique_ptr<Physics2D> physics2D{};
+
+    bool renderPhysics = false;
+    bool renderMap = true;
+    bool renderPlayerCollider = false;
 };
