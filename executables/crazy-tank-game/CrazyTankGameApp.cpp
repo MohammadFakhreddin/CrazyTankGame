@@ -266,7 +266,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 		if (inputMagnitude > glm::epsilon<float>())
 		{
 			auto& transformRef = playerInstance->GetTransform();
-			auto transformCopy = playerInstance->GetTransform();
+			auto transformCopy = transformRef;
 
 			float prevPlayerAngle = playerAngle;
 			playerAngle = fmodf(playerAngle + inputAxis.x * playerAngularSpeed * deltaTimeSec, glm::two_pi<float>());
@@ -314,14 +314,6 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 			if (hasCollision == false)
 			{
-				//if (hasCollision == true)
-				//{
-				//	newPosition = glm::mix(transformRef.Getposition(), newPosition, hitInfo.hitTime - 1e-5f);
-				//	//newAngle = glm::slerp(transformRef.Getrotation().GetQuaternion(), newAngle, hitInfo.hitTime - 1e-5f);
-				//	playerAngle = glm::mix(prevPlayerAngle, playerAngle, hitInfo.hitTime - 1e-5);
-				//	newAngle = glm::angleAxis(playerAngle, glm::vec3{ 0.f, 1.f, 0.f });
-				//}
-
 				transformRef.Setposition(newPosition);
 				transformRef.SetQuaternion(newAngle);
 			}
