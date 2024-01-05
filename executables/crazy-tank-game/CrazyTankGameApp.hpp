@@ -71,9 +71,6 @@ private:
     std::shared_ptr<MFA::LinePipeline> linePipeline{};
     std::shared_ptr<MFA::LineRenderer> lineRenderer{};
 
-    // Temporary
-    std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
-
 
     glm::vec2 inputAxis{};
     bool inputA{};
@@ -81,17 +78,9 @@ private:
 
     std::unique_ptr<GameInstance> game;
 
-    glm::vec2 colliderDimension{5.0f, 6.0f};
-    glm::vec2 colliderCenter{0.0f, 0.0f };
-    Physics2D::EntityID playerColliderId{};
-
-    std::vector<glm::vec4> tankCollider{};
-
-    std::unique_ptr<Map> map{};
-
     std::unique_ptr<Physics2D> physics2D{};
 
     bool renderPhysics = false;
     bool renderMap = true;
-    bool renderPlayerCollider = false;
+    bool renderPlayerCollider = true;
 };
