@@ -4,7 +4,6 @@
 #include "RenderBackend.hpp"
 #include "RenderTypes.hpp"
 #include "ImportGLTF.hpp"
-#include "Collision.hpp"
 
 #include <memory>
 
@@ -28,10 +27,7 @@ namespace MFA
         void Render(RT::CommandRecordState& recordState, std::vector<glm::mat4> const& models);
 
         void Render(RT::CommandRecordState& recordState, std::vector<MeshInstance*> const& instances) const;
-
-        [[nodiscard]]
-        std::vector<CollisionTriangle> GetCollisionTriangles(glm::mat4 const& model) const noexcept;
-
+        
         [[nodiscard]]
         std::vector<glm::vec3> GetVertices(glm::mat4 const& model) const noexcept;
 
@@ -50,9 +46,7 @@ namespace MFA
         std::vector<std::shared_ptr<RT::BufferGroup>> CreateMaterials(VkCommandBuffer cb);
 
         void CreateDescriptorSets();
-
-        void GenerateCollisionTriangles(AS::GLTF::Model const& model);
-
+        
         void DrawSubMesh(
             RT::CommandRecordState& recordState,
             int subMeshIdx,
@@ -76,9 +70,7 @@ namespace MFA
         std::vector<std::shared_ptr<RT::GpuTexture>> _textures{};
         std::vector<std::shared_ptr<RT::BufferGroup>> _materials{};
         std::vector<std::vector<RT::DescriptorSetGroup>> _descriptorSets;
-
-        std::vector<CollisionTriangle> _collisionTriangles{};
-
+        
         int _vertexCount{};
         std::shared_ptr<Blob> _vertices{};
 

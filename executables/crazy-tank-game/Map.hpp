@@ -11,7 +11,7 @@ class Map
 public:
 
     explicit Map(
-        float width, float height,
+        float mapWidth, float mapHeight,
         int rows, int columns, int * walls,                     // For now walls are either 1 or zero
         std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
         std::shared_ptr<MFA::RT::GpuTexture> errorTexture

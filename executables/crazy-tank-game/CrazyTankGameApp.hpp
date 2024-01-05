@@ -9,6 +9,10 @@
 #include "utils/MeshInstance.hpp"
 #include "Map.hpp"
 #include "Gameplay.hpp"
+#include "pipeline/PointPipeline.hpp"
+#include "utils/LineRenderer.hpp"
+#include "utils/PointRenderer.hpp"
+#include "Physics2D.hpp"
 
 #include <memory>
 #include <thread>
@@ -61,11 +65,33 @@ private:
     std::shared_ptr<MFA::RT::SamplerGroup> defaultSampler{};
     std::shared_ptr<MFA::RT::GpuTexture> errorTexture{};
 
+    std::shared_ptr<MFA::PointPipeline> pointPipeline{};
+    std::shared_ptr<MFA::PointRenderer> pointRenderer{};
+
+    std::shared_ptr<MFA::LinePipeline> linePipeline{};
+    std::shared_ptr<MFA::LineRenderer> lineRenderer{};
+
+    // Temporary
+    std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
+
+
     glm::vec2 inputAxis{};
     bool inputA{};
     bool inputB{};
 
     std::unique_ptr<GameInstance> game;
 
+    glm::vec2 colliderDimension{5.0f, 6.0f};
+    glm::vec2 colliderCenter{0.0f, 0.0f };
+    Physics2D::EntityID playerColliderId{};
+
+    std::vector<glm::vec4> tankCollider{};
+
     std::unique_ptr<Map> map{};
+
+    std::unique_ptr<Physics2D> physics2D{};
+
+    bool renderPhysics = false;
+    bool renderMap = true;
+    bool renderPlayerCollider = false;
 };

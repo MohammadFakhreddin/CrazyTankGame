@@ -121,12 +121,6 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/job_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/job_system")
 link_libraries(JobSystem)
 
-### Physics #############################################
-
-add_subdirectory("${CMAKE_SOURCE_DIR}/engine/physics")
-include_directories("${CMAKE_SOURCE_DIR}/engine/physics")
-link_libraries(Physics)
-
 ### Renderer #############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/render_system")
