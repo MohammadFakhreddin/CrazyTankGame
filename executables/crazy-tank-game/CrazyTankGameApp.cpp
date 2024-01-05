@@ -140,7 +140,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		};
-		game = std::make_unique<GameInstance>(shadingPipeline, errorTexture, 10, 10, walls.data());
+		game = std::make_unique<GameInstance>(shadingPipeline, errorTexture, 10, 10, walls);
 	}
 
 }
@@ -274,9 +274,14 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	//if (renderPlayerCollider == true)
 	//{
-	//	for (auto const & point : tankCollider)
+	//	//for (auto const & point : tankCollider)
+	//	//{
+	//	//	pointRenderer->Draw(recordState, playerInstance->GetTransform().GetMatrix() * point);
+	//	//}
+
+	//	for (auto const& point : game->map.AStar(1, 1, 8, 8))
 	//	{
-	//		pointRenderer->Draw(recordState, playerInstance->GetTransform().GetMatrix() * point);
+	//		pointRenderer->Draw(recordState, glm::vec3{ point.x, 0, point.y });
 	//	}
 	//}
 

@@ -10,6 +10,7 @@
 #include "Map.hpp"
 
 #include <list>
+#include <iostream>
 
 struct TankEntity {
 	glm::vec2 flatPosition{};
@@ -159,7 +160,7 @@ struct GameInstance {
 
 	GameInstance(std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
 		std::shared_ptr<MFA::RT::GpuTexture> errorTexture,
-		int rows, int columns, int* walls
+		int rows, int columns, std::vector<int> const& walls
 	) : map(float(rows), float(columns), rows, columns, walls, pipeline, errorTexture) {
 		_pTankRenderer = std::make_unique<MFA::MeshRenderer>(
 			pipeline,
@@ -186,6 +187,8 @@ struct GameInstance {
 		);
 
 		player = TankEntity(*_pTankRenderer);
+
+		map.AStar(1, 1, 8, 8);
 	}
 
 	void reset() {
