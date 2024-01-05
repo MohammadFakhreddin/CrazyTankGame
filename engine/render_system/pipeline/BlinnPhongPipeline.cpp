@@ -9,6 +9,20 @@
 
 namespace MFA
 {
+
+    //-------------------------------------------------------------------------------------------------
+
+    BlinnPhongPipeline::BlinnPhongPipeline(
+        std::shared_ptr<DisplayRenderPass> displayRenderPass,
+        std::shared_ptr<RT::BufferGroup> viewProjectionBuffer
+    )
+        : BlinnPhongPipeline(
+            displayRenderPass,
+            viewProjectionBuffer,
+            Params{}
+        )
+    {}
+
     //-------------------------------------------------------------------------------------------------
 
     BlinnPhongPipeline::BlinnPhongPipeline(

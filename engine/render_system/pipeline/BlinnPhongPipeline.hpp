@@ -47,8 +47,13 @@ namespace MFA
 
         explicit BlinnPhongPipeline(
             std::shared_ptr<DisplayRenderPass> displayRenderPass,
+            std::shared_ptr<RT::BufferGroup> viewProjectionBuffer
+        );
+
+        explicit BlinnPhongPipeline(
+            std::shared_ptr<DisplayRenderPass> displayRenderPass,
             std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
-            Params params = Params{}
+            Params params
         );
 
         ~BlinnPhongPipeline();
