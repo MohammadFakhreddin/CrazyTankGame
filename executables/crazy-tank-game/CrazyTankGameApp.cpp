@@ -169,11 +169,11 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 CrazyTankGameApp::~CrazyTankGameApp()
 {
-	physics2D.reset();
 	lineRenderer.reset();
 	linePipeline.reset();
 	pointRenderer.reset();
 	pointPipeline.reset();
+	physics2D.reset();
 	map.reset();
 	tankRenderer.reset();
 	errorTexture.reset();

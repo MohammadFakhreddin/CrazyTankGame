@@ -37,6 +37,9 @@ if(LINUX)
     set(CMAKE_USE_WIN32_THREADS_INIT 0)
     set(CMAKE_USE_PTHREADS_INIT 1)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+    set(CMAKE_C_COMPILER "/usr/bin/aarch64-linux-gnu-gcc-11")
+    set(CMAKE_CXX_COMPILER "/usr/bin/aarch64-linux-gnu-g++-11")
 endif()
 
 ### OpenMP #############################################

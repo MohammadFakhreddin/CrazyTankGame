@@ -103,5 +103,5 @@ private:
 
     bool renderPhysics = false;
     bool renderMap = true;
-    bool renderPlayerCollider = false;
+    bool renderPlayerCollider = true;
 };
