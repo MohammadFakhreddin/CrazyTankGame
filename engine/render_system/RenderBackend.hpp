@@ -6,10 +6,10 @@
 #include <string>
 #include <cmath>
 
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_vulkan.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL.h>
+#include <SDL_keycode.h>
+#include <SDL_vulkan.h>
+#include <SDL_events.h>
+#include <SDL.h>
 #undef main
 
 

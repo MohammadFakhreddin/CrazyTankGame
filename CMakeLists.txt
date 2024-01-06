@@ -30,6 +30,8 @@ else()
     message(STATUS ${CMAKE_CXX_FLAGS_DEBUG})
 endif()
 
+OPTION(ARM64_MODE "Enables arm 64 mode" OFF) # Enabled by default
+
 if(LINUX)
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
@@ -37,9 +39,10 @@ if(LINUX)
     set(CMAKE_USE_WIN32_THREADS_INIT 0)
     set(CMAKE_USE_PTHREADS_INIT 1)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
-
+    # if (ARM64_MODE)
     set(CMAKE_C_COMPILER "/usr/bin/aarch64-linux-gnu-gcc-11")
     set(CMAKE_CXX_COMPILER "/usr/bin/aarch64-linux-gnu-g++-11")
+    # endif()
 endif()
 
 ### OpenMP #############################################
@@ -86,8 +89,16 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 link_libraries(glm)
 
-link_libraries(SDL2)
-link_libraries("${CMAKE_SOURCE_DIR}/arm_libvulkan.so.1.3.239")
+# if (ARM64_MODE)
+    message(STATUS Linking vulkan for arm64)
+    link_libraries("${CMAKE_SOURCE_DIR}/arm_libvulkan.so.1.3.239")
+    link_libraries("${CMAKE_SOURCE_DIR}/arm_libSDL2.so")
+    link_libraries("${CMAKE_SOURCE_DIR}/arm_libSDL2-2.0.so")
+# else()
+#     message(STATUS Linking vulkan)
+#     link_libraries(Vulkan::Vulkan)
+#     link_libraries(SDL2)
+# endif()
 
 ### Working directory
 
