@@ -88,9 +88,9 @@ public:
     bool UnRegister(EntityID id);
 
     //bool MoveAABB(EntityID id, glm::vec2 const & min, glm::vec2 const & max);
-
+    // Returns false if collision detected
     bool MoveSphere(EntityID id, glm::vec2 const & center, float radius);
-
+    // Returns false if collision detected
     bool MoveBox(
         EntityID id, 
         glm::vec2 const& v0, 

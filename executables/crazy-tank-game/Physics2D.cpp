@@ -329,6 +329,7 @@ bool Physics2D::Raycast(
 {
     auto const startPos = origin - direction * 1e-5f;
     auto const endPos = origin + direction * (maxDistance + 1e-5f);
+    maxDistance += 2e-5f;
 
     glm::vec2 max{};
 	AABB2D::Max(startPos, endPos, max);
@@ -340,7 +341,7 @@ bool Physics2D::Raycast(
 
     std::set<Item*> set{};
 
- /*   for (auto & item : _nonStaticItemMap)
+	for (auto & item : _nonStaticItemMap)
     {
         set.insert(&item.second);
     }
@@ -348,7 +349,7 @@ bool Physics2D::Raycast(
     for (auto & item : _staticItemMap)
     {
         set.insert(&item.second);
-    }*/
+    }
 
     {// Static
         int const minX = static_cast<int>(std::floor(min.x / _staticCellSize.x));
@@ -476,11 +477,11 @@ glm::vec2 Physics2D::OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v
     );
     MFA_ASSERT((std::abs(normal3.y) - glm::epsilon<float>() < 0));
     auto normal2 = glm::vec2{normal3.x, normal3.z};
-    if (glm::dot(normal2, v0 - center) > 0)
+    if (glm::dot(normal2, v0 - center) < 0)
     {
         normal2 = -normal2;
     }
-    return normal2;
+    return glm::normalize(normal2);
 }
 
 //-----------------------------------------------------------------------
@@ -571,7 +572,7 @@ bool Physics2D::RayBoxIntersection(
         }
     }
     {
-        float distance{};
+        float time{};
         glm::vec2 const normal = OrthogonalDirection(box.v2, box.v1, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
@@ -580,17 +581,17 @@ bool Physics2D::RayBoxIntersection(
             box.v1,
             box.v2,
             normal,
-            distance
+            time
         );
-        if (lineHasCollision == true && distance < outTime)
+        if (lineHasCollision == true && time < outTime)
         {
-            outTime = distance;
+            outTime = time;
             outNormal = normal;
             hasCollision = true;
         }
     }
     {
-        float distance{};
+        float time{};
         glm::vec2 const normal = OrthogonalDirection(box.v3, box.v2, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
@@ -599,17 +600,17 @@ bool Physics2D::RayBoxIntersection(
             box.v2,
             box.v3,
             normal,
-            distance
+            time
         );
-        if (lineHasCollision == true && distance < outTime)
+        if (lineHasCollision == true && time < outTime)
         {
-            outTime = distance;
+            outTime = time;
             outNormal = normal;
             hasCollision = true;
         }
     }
     {
-        float distance{};
+        float time{};
         glm::vec2 const normal = OrthogonalDirection(box.v0, box.v3, box.center);
         bool const lineHasCollision = RayLineIntersection(
             rayOrigin,
@@ -618,11 +619,11 @@ bool Physics2D::RayBoxIntersection(
             box.v3,
             box.v0,
             normal,
-            distance
+            time
         );
-        if (lineHasCollision == true && distance < outTime)
+        if (lineHasCollision == true && time < outTime)
         {
-            outTime = distance;
+            outTime = time;
             outNormal = normal;
             hasCollision = true;
         }
@@ -645,12 +646,12 @@ bool Physics2D::RayLineIntersection(
 {
     auto const & n = lineNormal;
 
-    glm::vec2 const & D = rayDirection * rayMaxDistance;
+	glm::vec2 const & D = rayDirection * rayMaxDistance;
     glm::vec2 const& P = rayOrigin;
     glm::vec2 const& Q0 = lineV0;
 
     float const DdotN = glm::dot(D, n);
-    if (DdotN <= 0.0f)
+    if (DdotN >= 0.0f)
     {
         return false;
     }
@@ -658,18 +659,20 @@ bool Physics2D::RayLineIntersection(
     float const t1 = glm::dot((Q0 - P), n) / DdotN;
     outTime = t1;
 
-    if (t1 >= 0.0f && t1 < 1.0f)
+    if (t1 >= 0.0f && t1 <= 1.0f)
     {
-        auto const Q = outTime * rayDirection + rayOrigin;
+        auto const Q = (outTime * rayDirection * rayMaxDistance) + rayOrigin;
         auto const lineDiff = lineV1 - lineV0;
         auto const lineDiff2 = glm::dot(lineDiff, lineDiff);
         if (lineDiff2 == 0.0f)
         {
+            MFA_ASSERT(false);
             return false;
         }
 
         float const t2 = glm::dot(Q - lineV0, lineDiff) / lineDiff2;
-        return t2 <= 1.0f + 1e-5 && t2 >= -1e-5;
+        auto const hasCollision = t2 <= 1.0f + 1e-5f && t2 >= -1e-5f;
+        return hasCollision;
     }
 
     return false;
