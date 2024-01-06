@@ -52,18 +52,31 @@ if(OpenMP_CXX_FOUND)
     link_libraries(OpenMP::OpenMP_CXX)
 endif()
 
+
+
+## SDL #################################################
+
+# find_package(SDL2 REQUIRED)
+# include_directories(${SDL2_INCLUDE_DIRS})
+add_subdirectory("${CMAKE_SOURCE_DIR}/SDL")
+include_directories("${CMAKE_SOURCE_DIR}/SDL/include")
+# message(STATUS "SDL include directories are ${SDL2_INCLUDE_DIRS}")
+# message(STATUS "SDL libraries are ${SDL2_LIBRARIES}")
+
+### Vulkan ##############################################
+
+# find_package(Vulkan REQUIRED)
+# message(STATUS "Vulkan include directories are ${Vulkan_INCLUDE_DIRS}")
+# include_directories(${Vulkan_INCLUDE_DIRS})
+add_subdirectory("${CMAKE_SOURCE_DIR}/Vulkan-Headers")
+include_directories("${CMAKE_SOURCE_DIR}/Vulkan-Headers/include")
+
 ### Imgui ###############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/imgui")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/imgui")
 link_libraries(Imgui)
 
-### Vulkan ##############################################
-
-find_package(Vulkan REQUIRED)
-message(STATUS "Vulkan include directories are ${Vulkan_INCLUDE_DIRS}")
-include_directories(${Vulkan_INCLUDE_DIRS})
-link_libraries(Vulkan::Vulkan)
 
 ### glm ##################################################
 
@@ -72,6 +85,9 @@ add_definitions(-DGLM_FORCE_DEPTH_ZERO_TO_ONE)
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 link_libraries(glm)
+
+link_libraries(SDL2)
+link_libraries("${CMAKE_SOURCE_DIR}/arm_libvulkan.so.1.3.239")
 
 ### Working directory
 
@@ -85,14 +101,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/stb_image
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/nlohmann")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/tiny_gltf_loader")
 link_libraries(LibConfig)
-
-## SDL #################################################
-
-find_package(SDL2 REQUIRED)
-message(STATUS "SDL include directories are ${SDL2_INCLUDE_DIRS}")
-include_directories(${SDL2_INCLUDE_DIRS})
-message(STATUS "SDL libraries are ${SDL2_LIBRARIES}")
-link_libraries(${SDL2_LIBRARIES})
 
 ### Bedrock ##############################################
 
