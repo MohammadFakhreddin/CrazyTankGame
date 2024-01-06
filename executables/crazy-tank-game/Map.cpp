@@ -105,17 +105,12 @@ int Map::WallAt(int x, int y) const {
 }
 
 std::vector<glm::vec2> Map::AStar(int x_from, int y_from, int x_to, int y_to) const {
-    struct Coord { 
-        int x, y;
-    };
-
-
     Coord c_from{ x_from, y_from };
     Coord c_to{ x_to, y_to };
 
     auto dist = [](Coord const& c_a, Coord const& c_b) -> float { return sqrtf(static_cast<float>((c_a.x - c_b.x) * (c_a.x - c_b.x) + (c_a.y - c_b.y) * (c_a.y - c_b.y))); };
 
-    auto coord_cmp_less = [](Coord const& c_a, Coord const& c_b) -> bool { return c_a.y < c_b.y || (c_a.y == c_b.y && c_a.x < c_b.x); };
+    auto coord_cmp_less = [](Coord const& lhs, Coord const& rhs) -> bool { return lhs.y < rhs.y || (lhs.y == rhs.y && lhs.x < rhs.x); };
     std::map<Coord, Coord, decltype(coord_cmp_less)> parent(coord_cmp_less);
     std::map<Coord, float, decltype(coord_cmp_less)> g_score(coord_cmp_less); g_score[c_from] = 0.f;
     std::map<Coord, float, decltype(coord_cmp_less)> f_score(coord_cmp_less); f_score[c_from] = dist(c_from, c_to);

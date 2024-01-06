@@ -9,6 +9,9 @@
 class Map
 {
 public:
+    struct Coord {
+        int x, y;
+    };
 
     explicit Map(
         float mapWidth, float mapHeight,
@@ -23,6 +26,8 @@ public:
     int WallAt(int x, int y) const;
 
     std::vector<glm::vec2> AStar(int x_from, int y_from, int x_to, int y_to) const;
+
+    
 
 private:
     int _rows, _columns;
