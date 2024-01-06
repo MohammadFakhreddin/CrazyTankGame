@@ -96,18 +96,29 @@ void Map::Render(MFA::RT::CommandRecordState& recordState)
     _wallRenderer->Render(recordState, wallInstances);
 }
 
-glm::vec2 Map::CellPosition(int x, int y) const {
-    return { -0.5f * static_cast<float>(_columns) * _wallHeight + (static_cast<float>(y) + 0.5f) * _wallHeight, -0.5f * static_cast<float>(_columns) * _wallWidth + (static_cast<float>(x) + 0.5f) * _wallWidth };
+glm::vec2 Map::CellPosition(Coord const& c) const {
+    return { 
+        -0.5f * static_cast<float>(_rows) * _wallWidth + (static_cast<float>(c.x) + 0.5f) * _wallWidth,
+        -0.5f * static_cast<float>(_columns) * _wallHeight + (static_cast<float>(c.y) + 0.5f) * _wallHeight
+    };
 }
 
-int Map::WallAt(int x, int y) const {
-    return _walls[x + y * _columns];
+Map::Coord Map::PositionCoord(glm::vec2 const& p) const {
+    return {
+        int((p.x + 0.5f * static_cast<float>(_rows) * _wallWidth) / _wallWidth),
+        int((p.y + 0.5f * static_cast<float>(_columns) * _wallHeight) / _wallHeight)
+    };
 }
 
-std::vector<glm::vec2> Map::AStar(int x_from, int y_from, int x_to, int y_to) const {
-    Coord c_from{ x_from, y_from };
-    Coord c_to{ x_to, y_to };
+int Map::WallAt(Coord const& c) const {
+    return _walls[c.x * _columns + c.y];
+}
 
+bool Map::IsValid(Coord const& c) const { 
+    return c.x >= 0 && c.x < _rows && c.y >= 0 && c.y < _columns; 
+}
+
+std::vector<glm::vec2> Map::AStar(Coord const& c_from, Coord const& c_to) const {
     auto dist = [](Coord const& c_a, Coord const& c_b) -> float { return sqrtf(static_cast<float>((c_a.x - c_b.x) * (c_a.x - c_b.x) + (c_a.y - c_b.y) * (c_a.y - c_b.y))); };
 
     auto coord_cmp_less = [](Coord const& lhs, Coord const& rhs) -> bool { return lhs.y < rhs.y || (lhs.y == rhs.y && lhs.x < rhs.x); };
@@ -128,7 +139,7 @@ std::vector<glm::vec2> Map::AStar(int x_from, int y_from, int x_to, int y_to) co
                 Coord{ c_current.x - 1, c_current.y }, Coord{ c_current.x + 1, c_current.y },
                 Coord{ c_current.x, c_current.y - 1 }, Coord{ c_current.x, c_current.y + 1 }
             }) {
-            if (c_n.x >= 0 && c_n.x < _columns && c_n.y >= 0 && c_n.y < _rows && WallAt(c_n.x, c_n.y) == 0) {
+            if (IsValid(c_n) && WallAt(c_n) == 0) {
                 float tentative_gs = g_score[c_current] + dist(c_current, c_n);
                 if (!g_score.contains(c_n) || tentative_gs < g_score[c_n]) {
                     parent[c_n] = c_current;
@@ -142,14 +153,26 @@ std::vector<glm::vec2> Map::AStar(int x_from, int y_from, int x_to, int y_to) co
     Coord c_trace = c_to;
     std::vector<glm::vec2> path;
     while (parent.contains(c_trace)) {
-        path.push_back(CellPosition(c_trace.x, c_trace.y));
+        path.push_back(CellPosition(c_trace));
         c_trace = parent[c_trace];
     }
-    if (c_trace.x == c_from.x && c_trace.y == c_from.y) {
-        path.push_back(CellPosition(c_from.x, c_from.y));
-    }
-    std::reverse(path.begin(), path.end());
+    //if (c_trace.x == c_from.x && c_trace.y == c_from.y) {
+    //    path.push_back(CellPosition(c_from.x, c_from.y));
+    //}
+    //std::reverse(path.begin(), path.end());
     return path;
+}
+
+Map::Coord Map::RandomTile(bool avoidWall) {
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<> row_dist(0, _rows - 1);
+    std::uniform_int_distribution<> col_dist(0, _columns - 1);
+    Coord result{ row_dist(rng), col_dist(rng) };
+    while (avoidWall && WallAt(result) > 0) {
+        result = { row_dist(rng), col_dist(rng) };
+    }
+    return result;
 }
 
 //-----------------------------------------------------------------------

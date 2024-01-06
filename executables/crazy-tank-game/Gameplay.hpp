@@ -33,7 +33,7 @@ struct TankEntity {
 
 	glm::vec3 ShootPos() const { return glm::vec3{ flatPosition.x, 0.f, flatPosition.y } + glm::rotate(glm::angleAxis(baseAngle, glm::vec3{ 0.0f, 1.f, 0.f }), _shootPos); }
 
-	void AimAt(const glm::vec2 aim_dir) { baseAngle = fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
+	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
 
 private:
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
@@ -71,14 +71,24 @@ struct GameInstance {
 
 	std::list<BulletEntity> player_bullets;
 
-	std::list<TankEntity> simple_tank_enemies;
+	struct TankAI {
+		enum class TankAiState {
+			MOVING,
+			AT_NODE
+		};
+
+		TankEntity entity;
+		std::vector<glm::vec2> path_queue;
+		TankAiState state = TankAiState::AT_NODE;
+	};
+	std::list<TankAI> simple_tank_enemies;
 
 	GameInstance(std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
 		std::shared_ptr<MFA::RT::GpuTexture> errorTexture,
 		int rows, int columns, std::vector<int> const& walls
 	);
 
-	std::list<TankEntity>::iterator AddTankEnemy(const glm::vec2& pos);
+	std::list<TankAI>::iterator AddTankEnemy(const glm::vec2& pos);
 
 	void reset();
 

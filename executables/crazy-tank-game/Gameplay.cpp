@@ -99,6 +99,10 @@ GameInstance::GameInstance(std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
 	);
 
 	player = TankEntity(*_pTankRenderer);
+
+	AddTankEnemy(map.CellPosition(map.RandomTile()));
+	AddTankEnemy(map.CellPosition(map.RandomTile()));
+
 }
 
 MFA::Transform BulletEntity::GetTransform(glm::vec3 pos, float bAngl, float scl) {
@@ -109,8 +113,8 @@ MFA::Transform BulletEntity::GetTransform(glm::vec3 pos, float bAngl, float scl)
 	return transform;
 }
 
-std::list<TankEntity>::iterator GameInstance::AddTankEnemy(const glm::vec2& pos) {
-	simple_tank_enemies.emplace_back(*_eTankRenderer, pos);
+std::list<GameInstance::TankAI>::iterator GameInstance::AddTankEnemy(const glm::vec2& pos) {
+	simple_tank_enemies.emplace_back(TankEntity{ *_eTankRenderer, pos }, std::vector<glm::vec2>{});
 	return std::prev(simple_tank_enemies.end());
 }
 
@@ -128,9 +132,41 @@ void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA
 		player_bullets.emplace_back(*_pBulletRenderer, player.ShootPos(), player.baseAngle, 0.1f);
 	}
 
-	for (TankEntity& e : simple_tank_enemies) {
-		e.AimAt(player.flatPosition - e.flatPosition);
-		e.UpdateMI();
+	for (TankAI& e : simple_tank_enemies) {
+		switch (e.state)
+		{
+		case TankAI::TankAiState::MOVING:
+		{
+			float delta_dist = glm::dot(-e.entity.BaseDir(), e.path_queue.back() - e.entity.flatPosition);
+			if (delta_dist > 1e-3f) {
+				e.entity.flatPosition -= e.entity.BaseDir() * PLAYER_SPEED * delta;
+			}
+			else {
+				e.path_queue.pop_back();
+				e.state = TankAI::TankAiState::AT_NODE;
+			}
+		}
+			break;
+		case TankAI::TankAiState::AT_NODE:
+		{
+			while (e.path_queue.empty()) {
+				auto new_goal = map.RandomTile();
+				e.path_queue = map.AStar(map.PositionCoord(e.entity.flatPosition), new_goal);
+			}
+			float goal_angle = e.entity.AimAt(e.path_queue.back() - e.entity.flatPosition);
+			float delta_angle = goal_angle - e.entity.baseAngle;
+			if (fabsf(delta_angle) > 1e-2f) {
+				float angular_vel = delta_angle > 0.f ? 1.f : -1.f;
+				e.entity.baseAngle = fmodf(e.entity.baseAngle + angular_vel * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
+			}
+			else {
+				e.state = TankAI::TankAiState::MOVING;
+			}
+		}
+			break;
+		default: break;
+		}
+		e.entity.UpdateMI();
 	}
 
 	if (!player.CheckCollision(player_new_pos, player_new_angle, player.scale)) {
@@ -163,8 +199,8 @@ void GameInstance::Render(MFA::RT::CommandRecordState& recordState) {
 		_pBulletRenderer->Render(recordState, { b.GetMI() });
 	}
 
-	for (const TankEntity& e : simple_tank_enemies) {
-		_eTankRenderer->Render(recordState, { e.GetMI() });
+	for (const TankAI& e : simple_tank_enemies) {
+		_eTankRenderer->Render(recordState, { e.entity.GetMI() });
 	}
 
 	map.Render(recordState);
@@ -177,7 +213,7 @@ void GameInstance::RenderNoMap(MFA::RT::CommandRecordState& recordState) {
 		_pBulletRenderer->Render(recordState, { b.GetMI() });
 	}
 
-	for (const TankEntity& e : simple_tank_enemies) {
-		_pTankRenderer->Render(recordState, { e.GetMI() });
+	for (const TankAI& e : simple_tank_enemies) {
+		_pTankRenderer->Render(recordState, { e.entity.GetMI() });
 	}
 }

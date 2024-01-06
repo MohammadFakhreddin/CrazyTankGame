@@ -22,12 +22,15 @@ public:
 
     void Render(MFA::RT::CommandRecordState& recordState);
 
-    glm::vec2 CellPosition(int x, int y) const;
-    int WallAt(int x, int y) const;
+    glm::vec2 CellPosition(Coord const& c) const;
+    Coord PositionCoord(glm::vec2 const& p) const;
 
-    std::vector<glm::vec2> AStar(int x_from, int y_from, int x_to, int y_to) const;
+    int WallAt(Coord const& c) const;
+    bool IsValid(Coord const& c) const;
 
-    
+    std::vector<glm::vec2> AStar(Coord const& c_from, Coord const& c_to) const;
+
+    Coord RandomTile(bool avoidWall = true);
 
 private:
     int _rows, _columns;

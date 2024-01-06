@@ -279,7 +279,7 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 	//	//	pointRenderer->Draw(recordState, playerInstance->GetTransform().GetMatrix() * point);
 	//	//}
 
-	//	for (auto const& point : game->map.AStar(1, 1, 8, 8))
+	//	for (auto const& point : game->map.AStar({ 0, 0 }, {4, 19}))
 	//	{
 	//		pointRenderer->Draw(recordState, glm::vec3{ point.x, 0, point.y });
 	//	}
