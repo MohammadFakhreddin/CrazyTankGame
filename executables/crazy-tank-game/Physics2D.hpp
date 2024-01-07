@@ -113,6 +113,8 @@ public:
         float hitTime{};
         OnHit onHit{};
     };
+
+    // TODO: Add an option to enable and disable the back-face check
     [[nodiscard]]
     bool Raycast(
         int layerMask,
