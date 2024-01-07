@@ -221,6 +221,7 @@ bool Physics2D::MoveBox(
 
 void Physics2D::Update()
 {
+	/*
     if (_isNonStaticGridDirty == true)
     {
         for (auto const & [key, item] : _nonStaticItemMap)
@@ -281,6 +282,7 @@ void Physics2D::Update()
             }
         }
     }
+    */
 }
 
 //-----------------------------------------------------------------------
@@ -339,18 +341,21 @@ bool Physics2D::Raycast(
 
     AABB2D aabb{ .min = min, .max = max };
 
-    std::set<Item*> set{};
+    std::vector<Item*> set{};
 
 	for (auto & item : _nonStaticItemMap)
     {
-        set.insert(&item.second);
+        set.emplace_back(&item.second);
     }
 
     for (auto & item : _staticItemMap)
     {
-        set.insert(&item.second);
+        set.emplace_back(&item.second);
     }
-
+    
+    
+   // MFA_LOG_INFO("Raycast0");
+/*
     {// Static
         int const minX = static_cast<int>(std::floor(min.x / _staticCellSize.x));
         int const minY = static_cast<int>(std::floor(min.y / _staticCellSize.y));
@@ -384,6 +389,8 @@ bool Physics2D::Raycast(
             }
         }
     }
+    */
+    //MFA_LOG_INFO("Raycast1");
 
     bool hit = false;
     outHitInfo.hitTime = std::numeric_limits<float>().max();
@@ -448,6 +455,8 @@ bool Physics2D::Raycast(
 		    }
 	    }
     }
+    
+   // MFA_LOG_INFO("Raycast2");
 
     if (hit == true)
     {

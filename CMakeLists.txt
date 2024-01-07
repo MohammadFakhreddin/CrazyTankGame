@@ -8,6 +8,21 @@ set (CMAKE_CXX_STANDARD 20)
 
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+# Update submodules as needed
+    option(GIT_SUBMODULE "Check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "Submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        endif()
+    endif()
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(WINDOWS TRUE)
 endif()
@@ -53,14 +68,12 @@ endif()
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/imgui")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/imgui")
-link_libraries(Imgui)
 
 ### Vulkan ##############################################
 
-find_package(Vulkan REQUIRED)
-message(STATUS "Vulkan include directories are ${Vulkan_INCLUDE_DIRS}")
-include_directories(${Vulkan_INCLUDE_DIRS})
-link_libraries(Vulkan::Vulkan)
+add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Headers")
+include_directories("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Headers/include")
+add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Loader")
 
 ### glm ##################################################
 
@@ -68,7 +81,6 @@ add_definitions(-DGLM_FORCE_SILENT_WARNINGS)
 add_definitions(-DGLM_FORCE_DEPTH_ZERO_TO_ONE)
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
-link_libraries(glm)
 
 ### Working directory
 
@@ -81,15 +93,22 @@ include_directories("${CMAKE_SOURCE_DIR}/engine/libs/libconfig")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/stb_image")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/nlohmann")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/tiny_gltf_loader")
+
+## SDL ###################################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2")
+include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2/include")
+
+### Linking libraries ####################################
+
+if(OpenMP_CXX_FOUND)
+    link_libraries(OpenMP::OpenMP_CXX)
+endif()
+link_libraries(Imgui)
+link_libraries(glm)
+link_libraries(Vulkan::Vulkan)
+link_libraries(SDL2-static)
 link_libraries(LibConfig)
-
-## SDL #################################################
-
-find_package(SDL2 REQUIRED)
-message(STATUS "SDL include directories are ${SDL2_INCLUDE_DIRS}")
-include_directories(${SDL2_INCLUDE_DIRS})
-message(STATUS "SDL libraries are ${SDL2_LIBRARIES}")
-link_libraries(${SDL2_LIBRARIES})
 
 ### Bedrock ##############################################
 

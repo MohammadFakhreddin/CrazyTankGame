@@ -113,8 +113,6 @@ public:
         float hitTime{};
         OnHit onHit{};
     };
-
-    // TODO: Add an option to enable and disable the back-face check
     [[nodiscard]]
     bool Raycast(
         int layerMask,
@@ -173,11 +171,11 @@ private:
     std::unordered_map<EntityID, Item> _staticItemMap{};
     std::unordered_map<EntityID, Item> _nonStaticItemMap{};
 
-    glm::vec2 _nonStaticCellSize{};
-    std::unordered_map<glm::ivec2, std::vector<Item *>> _nonStaticGrid{};
+    //glm::vec2 _nonStaticCellSize{};
+    //std::unordered_map<glm::ivec2, std::vector<Item *>> _nonStaticGrid{};
 
-    glm::vec2 _staticCellSize{};
-    std::unordered_map<glm::ivec2, std::vector<Item *>> _staticGrid{};
+    //glm::vec2 _staticCellSize{};
+    //std::unordered_map<glm::ivec2, std::vector<Item *>> _staticGrid{};
 
     EntityID _nextId{};
 
