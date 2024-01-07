@@ -1,0 +1,14 @@
+
+set(LIBRARY_SOURCES)
+
+list(
+    APPEND LIBRARY_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Physics2D.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Physics2D.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AABB2D.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AABB2D.cpp"
+)
+
+set(LIBRARY_NAME "Physics2D")
+add_library(${LIBRARY_NAME} ${LIBRARY_SOURCES})
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/")

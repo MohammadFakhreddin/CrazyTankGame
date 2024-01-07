@@ -127,6 +127,12 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/render_system")
 include_directories("${CMAKE_SOURCE_DIR}/engine/render_system")
 link_libraries(RenderSystem)
 
+### Physics #############################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/engine/physics_2d")
+include_directories("${CMAKE_SOURCE_DIR}/engine/physics_2d")
+link_libraries(Physics2D)
+
 ### Executables
 
 ### MeshViewer ##############################################
