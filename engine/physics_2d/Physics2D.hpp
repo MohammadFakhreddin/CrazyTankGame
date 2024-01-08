@@ -20,18 +20,22 @@ public:
 
     using Layer = uint32_t;
 
-    using OnHit = std::function<void(int)>;
+    using OnHit = std::function<void(Layer)>;
 
     enum class Type
     {
         Invalid,
-        //AABB,
+        AABB,
         Sphere,
         Box
         //Polygon
     };
 
-private:
+    struct Ray
+    {
+        glm::vec2 origin{};
+        glm::vec2 direction{};
+    };
 
     struct Sphere
     {
@@ -49,26 +53,36 @@ private:
         glm::vec2 center{};
     };
 
+private:
+
     //struct Polygon
     //{
     //    glm::vec2 vertices;
     //};
 
-    struct Item
+    struct Entity
     {
-        explicit Item() {}
-        ~Item() = default;
+        explicit Entity() {}
+        ~Entity() = default;
 
         EntityID id{};
         Type type = Type::Invalid;
-        bool isStatic = true;
-        AABB2D aabb{};
+        AABB2D aabb{
+            .min = {-1000.0f, -1000.0f},
+            .max = {-1000.0f, -1000.0f}
+        };
         OnHit onHit{};
         Layer layer{};
+        Layer layerMask{};          // Layers that the entity collide with
         union
         {
             Sphere sphere;
-            Box box{};
+            Box box{
+                .v0 = {-10000.0f, -10000.0f},
+                .v1 = {-10000.0f, -10000.0f},
+                .v2 = {-10000.0f, -10000.0f},
+                .v3 = {-10000.0f, -10000.0f}
+            };
         };
         //Polygon polygon;
     };
@@ -83,20 +97,39 @@ public:
     ~Physics2D();
 
     [[nodiscard]]
-    EntityID Register(Type type, int layer, bool isStatic, OnHit onHit);
+    EntityID Register(
+        Type type, 
+        Layer layer,                // Entity layer
+        Layer layerMask,            // Layers that the entity collide with
+        OnHit onHit
+    );
 
     bool UnRegister(EntityID id);
 
-    //bool MoveAABB(EntityID id, glm::vec2 const & min, glm::vec2 const & max);
-    // Returns false if collision detected
-    bool MoveSphere(EntityID id, glm::vec2 const & center, float radius);
-    // Returns false if collision detected
+    // Returns false if collision detected unless the object is static
+    bool MoveAABB(
+        EntityID id, 
+        glm::vec2 const & min, 
+		glm::vec2 const & max, 
+		bool checkForCollision = true
+    );
+
+	// Returns false if collision detected unless the object is static
+    bool MoveSphere(
+        EntityID id, 
+        glm::vec2 const & center, 
+		float radius, 
+		bool checkForCollision = true
+    );
+
+	// Returns false if collision detected unless the object is static
     bool MoveBox(
         EntityID id, 
         glm::vec2 const& v0, 
 		glm::vec2 const& v1, 
 		glm::vec2 const& v2, 
-		glm::vec2 const& v3
+		glm::vec2 const& v3,
+        bool checkForCollision = true
     );
 
     //bool MovePolygon(EntityID id, std::vector<glm::vec2> const& vertices);
@@ -115,17 +148,19 @@ public:
     };
     [[nodiscard]]
     bool Raycast(
-        int layerMask,
+        Layer layerMask,
         EntityID excludeId,
-        glm::vec2 const & origin,
-        glm::vec2 const & direction,
+        Ray const & ray,
         float maxDistance,
         HitInfo& outHitInfo
     );
 
-    // TODO: Sphere cast
-
-    // TODO: Raycast for moving polygons
+    //[[nodiscard]]
+    //bool HasCollision(
+    //    glm::vec2 const& position,
+    //    EntityID excludeId,
+    //    Layer layerMask
+    //) const;
     
     inline static Physics2D * Instance = nullptr;
 
@@ -137,45 +172,89 @@ private:
     [[nodiscard]]
     static glm::vec2 OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v1, glm::vec2 const& center);
 
+    [[nodiscard]]
     static bool RaySphereIntersection(
-        glm::vec2 const& rayOrigin, 
-        glm::vec2 const& rayDirection, 
+        Ray const & ray,
 		float rayMaxDistance, 
 		Sphere const& sphere,
         float & outTime,
 		glm::vec2 & outNormal
     );
 
+    [[nodiscard]]
     static bool RayBoxIntersection(
-        glm::vec2 const& rayOrigin,
-        glm::vec2 const& rayDirection,
+        Ray const& ray,
         float rayMaxDistance,
         Box const& box,
         float & outTime,
         glm::vec2 & outNormal
     );
 
+    [[nodiscard]]
     static bool RayLineIntersection(
-        glm::vec2 const& rayOrigin,
-        glm::vec2 const& rayDirection,
+        Ray const& ray,
         float rayMaxDistance,
         glm::vec2 const& lineV0,
         glm::vec2 const& lineV1,
         glm::vec2 const& lineNormal,
         float& outTime
     );
-    
-    bool _isStaticGridDirty = false;
-    bool _isNonStaticGridDirty = false;
 
-    std::unordered_map<EntityID, Item> _staticItemMap{};
-    std::unordered_map<EntityID, Item> _nonStaticItemMap{};
+    [[nodiscard]]
+    static bool BoxAABB_Collision(
+		Box const & box,
+        Entity const & aabbEntity
+    );
 
-    //glm::vec2 _nonStaticCellSize{};
-    //std::unordered_map<glm::ivec2, std::vector<Item *>> _nonStaticGrid{};
+    [[nodiscard]]
+    static bool SphereBoxCollision(
+		Sphere const & sphere,
+        Box const & box
+    );
 
-    //glm::vec2 _staticCellSize{};
-    //std::unordered_map<glm::ivec2, std::vector<Item *>> _staticGrid{};
+    [[nodiscard]]
+    static bool BoxBoxCollision(
+		Box const & box0,
+        Box const & box1
+    );
+
+    [[nodiscard]]
+    static bool SphereSphere_Collision(
+        Sphere const& sphere0,
+        Sphere const& sphere1
+    );
+
+    // TODO
+  //  static bool SphereAABB_Collision(
+		//Sphere const & sphere,
+  //      AABB2D const & aabb
+  //  );
+
+    [[nodiscard]]
+    static bool IsInsideSphere(
+        Sphere const & sphere, 
+        glm::vec2 const & position
+    );
+
+    [[nodiscard]]
+    static bool IsInsideBox(
+		Box const & box,
+        glm::vec2 const & position
+    );
+
+    [[nodiscard]]
+    bool CheckForAABB_Collision(Entity const & item) const;
+
+    [[nodiscard]]
+    bool CheckForSphereCollision(Entity const& item) const;
+
+    [[nodiscard]]
+    bool CheckForBoxCollision(Entity const& item) const;
+
+	std::unordered_map<EntityID, Entity> _itemMap{};
+    bool _isMapDirty = false;
+
+    std::vector<Entity*> _itemList{};
 
     EntityID _nextId{};
 

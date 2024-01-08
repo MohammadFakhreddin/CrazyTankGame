@@ -31,14 +31,19 @@ struct TankEntity {
 
 	glm::vec2 BaseDir() const { return { -sinf(baseAngle), -cosf(baseAngle) }; }
 
-	glm::vec3 ShootPos() const { return glm::vec3{ flatPosition.x, 0.f, flatPosition.y } + glm::rotate(glm::angleAxis(baseAngle, glm::vec3{ 0.0f, 1.f, 0.f }), _shootPos); }
+	glm::vec3 ShootPos() const { return glm::vec3{ _radius, 0.f, _radius } + glm::rotate(glm::angleAxis(baseAngle, glm::vec3{ 0.0f, 1.f, 0.f }), _shootPos); }
 
 	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
 
 private:
+
+	void OnHit(Physics2D::Layer layer);
+
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
 	glm::vec3 _shootPos{};
+	float _radius = 0.25f;
 	std::vector<glm::vec4> _collider{};
+	Physics2D::EntityID _physicsId{};
 };
 
 struct BulletEntity {

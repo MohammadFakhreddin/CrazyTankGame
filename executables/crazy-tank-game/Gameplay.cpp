@@ -11,8 +11,16 @@ TankEntity::TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& i
 
 	_collider.emplace_back(glm::vec4{ flatColliderDimension.x, 0.0f, flatColliderDimension.y, 1.0f });
 	_collider.emplace_back(glm::vec4{ -flatColliderDimension.x, 0.0f, flatColliderDimension.y, 1.0f });
-	_collider.emplace_back(glm::vec4{ flatColliderDimension.x, 0.0f, -flatColliderDimension.y, 1.0f });
 	_collider.emplace_back(glm::vec4{ -flatColliderDimension.x, 0.0f, -flatColliderDimension.y, 1.0f });
+	_collider.emplace_back(glm::vec4{ flatColliderDimension.x, 0.0f, -flatColliderDimension.y, 1.0f });
+	MFA_ASSERT(_collider.size() == 4);
+
+	_physicsId = Physics2D::Instance->Register(
+		Physics2D::Type::Box,
+		Layer::TankLayer,
+		Layer::WallLayer | Layer::TankLayer,
+		[this](auto layer)->void {OnHit(layer);}
+	);
 
 	UpdateMI();
 }
@@ -22,35 +30,31 @@ bool TankEntity::CheckCollision(glm::vec2 fPos, float bAngl, float scl) {
 		.hitTime = 1000.0f
 	};
 
+	/*auto const position = GetTransform(fPos, bAngl, scl).Getposition();
+	return !Physics2D::Instance->MoveSphere(
+		_physicsId,
+		glm::vec2{ position.x, position.z },
+		_radius,
+		true
+	);*/
+
+	auto const matrix = GetTransform(fPos, bAngl, scl).GetMatrix();
+
+	std::vector<glm::vec2> points{};
 	for (auto& p : _collider)
 	{
-		auto const p_from = _meshInstance->GetTransform().GetMatrix() * p;
-		auto const p_to = GetTransform(fPos, bAngl, scl).GetMatrix() * p;
-		auto const vector = p_to - p_from;
-		auto const length = glm::length(vector);
-		if (length > 0.0f)
-		{
-			auto const direction = vector / length;
-			Physics2D::HitInfo myHitInfo{};
-			auto const hit = Physics2D::Instance->Raycast(
-				Layer::WallLayer,
-				-1,
-				glm::vec2{ p_from.x, p_from.z },
-				glm::vec2{ direction.x, direction.z },
-				length,
-				myHitInfo
-			);
-			if (hit)
-			{
-				if (myHitInfo.hitTime < hitInfo.hitTime)
-				{
-					hitInfo = myHitInfo;
-				}
-				return true;
-			}
-		}
+		auto const p_to = matrix * p;
+		points.emplace_back(glm::vec2{ p_to.x, p_to.z });
 	}
-	return false;
+
+	return !Physics2D::Instance->MoveBox(
+		_physicsId,
+		points[0],
+		points[1],
+		points[2],
+		points[3]
+	);
+
 }
 
 MFA::Transform TankEntity::GetTransform(glm::vec2 fPos, float bAngl, float scl) {
@@ -59,6 +63,11 @@ MFA::Transform TankEntity::GetTransform(glm::vec2 fPos, float bAngl, float scl) 
 	transform.Setscale(glm::vec3{ scl });
 	transform.SetQuaternion(glm::angleAxis(bAngl, glm::vec3{ 0.f, 1.f, 0.f }));
 	return transform;
+}
+
+void TankEntity::OnHit(Physics2D::Layer layer)
+{
+	// TODO: Handle bullet hit here
 }
 
 BulletEntity::BulletEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec3& initPos, float initBA, float initScale) {
@@ -131,7 +140,7 @@ void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA
 	if (!inputA && _inputA) {
 		player_bullets.emplace_back(*_pBulletRenderer, player.ShootPos(), player.baseAngle, 0.1f);
 	}
-
+	// TODO: Enemy should handle collision too
 	for (TankAI& e : simple_tank_enemies) {
 		switch (e.state)
 		{

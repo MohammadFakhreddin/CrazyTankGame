@@ -9,7 +9,11 @@ public:
     glm::vec2 min{};
     glm::vec2 max{};
 
-    bool Overlap(AABB2D const& other);
+    [[nodiscard]]
+    bool Overlap(AABB2D const& other) const;
+
+    [[nodiscard]]
+    bool Overlap(glm::vec2 const& position) const;
 
     static void Min(glm::vec2 const& a, glm::vec2 const& b, glm::vec2& outMin) ;
 

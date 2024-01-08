@@ -59,7 +59,7 @@ Map::Map(
                     auto & transform = wallInstance.GetTransform();
                     transform.Setscale(glm::vec3{ halfWallWidth, 0.5f, halfWallHeight });
                     transform.Setposition(glm::vec3{ static_cast<float>(j) * _wallWidth + startX, 0.3f, static_cast<float>(i) * _wallHeight + startY });
-                    auto colliderId = Physics2D::Instance->Register(
+                    /*auto colliderId = Physics2D::Instance->Register(
                         Physics2D::Type::Box, 
                         Layer::WallLayer, 
                         true, 
@@ -75,6 +75,39 @@ Map::Map(
                         glm::vec2{ v1.x, v1.z }, 
                         glm::vec2{ v2.x, v2.z }, 
                         glm::vec2{ v3.x, v3.z }
+                    );*/
+                    auto colliderId = Physics2D::Instance->Register(
+                        Physics2D::Type::AABB,
+                        Layer::WallLayer,
+                        Layer::WallLayer,
+                        nullptr
+                    );
+
+                    auto const v04 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, -1.0f, 1.0f };
+                    auto const v14 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, 1.0f, 1.0f };
+                    auto const v24 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
+                    auto const v34 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
+
+                    auto const v0 = glm::vec2{ v04.x, v04.z };
+                    auto const v1 = glm::vec2{ v14.x, v14.z };
+                    auto const v2 = glm::vec2{ v24.x, v24.z };
+                    auto const v3 = glm::vec2{ v34.x, v34.z };
+
+                    glm::vec2 min{};
+                    AABB2D::Min(v0, v1, min);
+                    AABB2D::Min(min, v2, min);
+                    AABB2D::Min(min, v3, min);
+
+                    glm::vec2 max{};
+                    AABB2D::Max(v0, v1, max);
+                    AABB2D::Max(max, v2, max);
+                    AABB2D::Max(max, v3, max);
+
+		        	Physics2D::Instance->MoveAABB(
+                        colliderId,
+                        min,
+                        max,
+                        false
                     );
 		        }
 	        }
