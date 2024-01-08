@@ -164,6 +164,7 @@ void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA
 			}
 			float goal_angle = e.entity.AimAt(e.path_queue.back() - e.entity.flatPosition);
 			float delta_angle = goal_angle - e.entity.baseAngle;
+			delta_angle = delta_angle > glm::pi<float>() ? delta_angle - glm::two_pi<float>() : delta_angle;
 			if (fabsf(delta_angle) > 1e-2f) {
 				float angular_vel = delta_angle > 0.f ? 1.f : -1.f;
 				e.entity.baseAngle = fmodf(e.entity.baseAngle + angular_vel * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
