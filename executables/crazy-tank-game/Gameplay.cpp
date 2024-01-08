@@ -7,7 +7,7 @@ TankEntity::TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& i
 	_baseAngle = initBA;
 	_scale = initScale;
 
-	_shootPos = _scale * _meshInstance->FindNode("Shoot")->transform.Getposition();
+	_shootPos = _meshInstance->FindNode("Shoot")->transform.Getposition();
 
 	/*_collider.emplace_back(glm::vec4{ _flatColliderDimension.x, 0.0f, _flatColliderDimension.y, 1.0f });
 	_collider.emplace_back(glm::vec4{ -_flatColliderDimension.x, 0.0f, _flatColliderDimension.y, 1.0f });
@@ -19,7 +19,7 @@ TankEntity::TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& i
 		Physics2D::Type::AABB,
 		Layer::TankLayer,
 		Layer::WallLayer | Layer::TankLayer,
-		[this](auto layer)->void {OnHit(layer);}
+		[this] (auto layer) { OnHit(layer); }
 	);
 
 	UpdateMI();
@@ -78,6 +78,14 @@ BulletEntity::BulletEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec
 	position = initPos;
 	baseAngle = initBA;
 	scale = initScale;
+
+	physicsId = Physics2D::Instance->Register(
+		Physics2D::Type::Sphere,
+		Layer::ShellLayer,
+		Layer::WallLayer | Layer::TankLayer | Layer::ShellLayer,
+		nullptr
+	);
+
 	UpdateMI();
 }
 
@@ -111,8 +119,8 @@ GameInstance::GameInstance(std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
 
 	player = TankEntity(*_pTankRenderer);
 
-	AddTankEnemy(map.CellPosition(map.RandomTile()));
-	AddTankEnemy(map.CellPosition(map.RandomTile()));
+	//AddTankEnemy(map.CellPosition(map.RandomTile()));
+	//AddTankEnemy(map.CellPosition(map.RandomTile()));
 
 }
 
@@ -198,17 +206,34 @@ void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA
 		}
 	}
 
-	std::vector<std::list<BulletEntity>::iterator> toRemove;
-	for (std::list<BulletEntity>::iterator it = player_bullets.begin(); it != player_bullets.end(); ++it) {
-		it->position += it->BaseDir() * TEST_BULLET_SPEED * delta;
-		it->lifetimer -= delta;
-		if (it->lifetimer <= 0) {
-			toRemove.emplace_back(it);
+	std::vector<std::list<BulletEntity>::iterator> pbToRemove;
+	std::vector<std::list<TankAI>::iterator> steToRemove;
+	for (std::list<BulletEntity>::iterator pbit = player_bullets.begin(); pbit != player_bullets.end(); ++pbit) {
+		glm::vec3 displacement = pbit->BaseDir() * TEST_BULLET_SPEED * delta;
+		Physics2D::HitInfo wallHitInfo{};
+		Physics2D::Instance->Raycast(
+			Layer::WallLayer, 
+			pbit->physicsId, 
+			Physics2D::Ray{ glm::vec2{ pbit->position.x, pbit->position.z }, glm::vec2{ pbit->BaseDir().x, pbit->BaseDir().z } *TEST_BULLET_SPEED },
+			1.f, 
+			wallHitInfo);
+		if (wallHitInfo.hitTime < delta) {
+			--pbit->hitLeft;
+			if (pbit->hitLeft >= 0) pbit->Reflect(wallHitInfo.hitNormal);
+			else pbToRemove.emplace_back(pbit);
 		}
-		it->UpdateMI();
+		pbit->position += displacement;
+		pbit->lifetimer -= delta;
+		if (pbit->lifetimer <= 0) {
+			pbToRemove.emplace_back(pbit);
+		}
+		pbit->UpdateMI();
 	}
-	for (std::list<BulletEntity>::iterator it : toRemove) {
+	for (std::list<BulletEntity>::iterator it : pbToRemove) {
 		player_bullets.erase(it);
+	}
+	for (std::list<TankAI>::iterator it : steToRemove) {
+		simple_tank_enemies.erase(it);
 	}
 }
 

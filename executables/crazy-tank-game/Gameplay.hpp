@@ -24,7 +24,7 @@ struct TankEntity {
 
 	glm::vec2 BaseDir() const { return { -sinf(_baseAngle), -cosf(_baseAngle) }; }
 
-	glm::vec3 ShootPos() const { return glm::vec3{ _radius, 0.f, _radius } + glm::rotate(glm::angleAxis(_baseAngle, glm::vec3{ 0.0f, 1.f, 0.f }), _shootPos); }
+	glm::vec3 ShootPos() const { return _meshInstance->GetTransform().GetMatrix() * glm::vec4(_shootPos, 1.f); }
 
 	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
 
@@ -55,6 +55,8 @@ struct BulletEntity {
 	glm::vec3 position{};
 	float baseAngle = 0.f, scale = 1.f;
 	float lifetimer = 4.f;
+	int hitLeft = 2;
+	Physics2D::EntityID physicsId{};
 
 	BulletEntity() {}
 
@@ -67,6 +69,14 @@ struct BulletEntity {
 	MFA::MeshInstance* GetMI() const { return _meshInstance.get(); }
 
 	glm::vec3 BaseDir() const { return { sinf(baseAngle), 0.f, cosf(baseAngle) }; }
+
+	void Reflect(glm::vec2 const& wallNormal) {
+		glm::vec2 in_dir{ sinf(baseAngle), cosf(baseAngle) };
+		glm::vec2 out_dir = in_dir - 2.f * glm::dot(in_dir, wallNormal) * wallNormal;
+		baseAngle = AimAt(out_dir);
+	}
+
+	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
 
 private:
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
