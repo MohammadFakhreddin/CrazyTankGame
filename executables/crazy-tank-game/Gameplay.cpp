@@ -3,20 +3,20 @@
 TankEntity::TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos, float initBA, float initScale) {
 	_meshInstance = std::make_unique<MFA::MeshInstance>(meshRenderer);
 
-	flatPosition = initPos;
-	baseAngle = initBA;
-	scale = initScale;
+	_flatPosition = initPos;
+	_baseAngle = initBA;
+	_scale = initScale;
 
-	_shootPos = scale * _meshInstance->FindNode("Shoot")->transform.Getposition();
+	_shootPos = _scale * _meshInstance->FindNode("Shoot")->transform.Getposition();
 
-	_collider.emplace_back(glm::vec4{ flatColliderDimension.x, 0.0f, flatColliderDimension.y, 1.0f });
-	_collider.emplace_back(glm::vec4{ -flatColliderDimension.x, 0.0f, flatColliderDimension.y, 1.0f });
-	_collider.emplace_back(glm::vec4{ -flatColliderDimension.x, 0.0f, -flatColliderDimension.y, 1.0f });
-	_collider.emplace_back(glm::vec4{ flatColliderDimension.x, 0.0f, -flatColliderDimension.y, 1.0f });
-	MFA_ASSERT(_collider.size() == 4);
+	/*_collider.emplace_back(glm::vec4{ _flatColliderDimension.x, 0.0f, _flatColliderDimension.y, 1.0f });
+	_collider.emplace_back(glm::vec4{ -_flatColliderDimension.x, 0.0f, _flatColliderDimension.y, 1.0f });
+	_collider.emplace_back(glm::vec4{ -_flatColliderDimension.x, 0.0f, -_flatColliderDimension.y, 1.0f });
+	_collider.emplace_back(glm::vec4{ _flatColliderDimension.x, 0.0f, -_flatColliderDimension.y, 1.0f });
+	MFA_ASSERT(_collider.size() == 4);*/
 
 	_physicsId = Physics2D::Instance->Register(
-		Physics2D::Type::Box,
+		Physics2D::Type::AABB,
 		Layer::TankLayer,
 		Layer::WallLayer | Layer::TankLayer,
 		[this](auto layer)->void {OnHit(layer);}
@@ -25,36 +25,38 @@ TankEntity::TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& i
 	UpdateMI();
 }
 
-bool TankEntity::CheckCollision(glm::vec2 fPos, float bAngl, float scl) {
+bool TankEntity::Move(glm::vec2 fPos, float bAngl, bool checkForCollision) {
 	Physics2D::HitInfo hitInfo{
 		.hitTime = 1000.0f
 	};
 
-	/*auto const position = GetTransform(fPos, bAngl, scl).Getposition();
-	return !Physics2D::Instance->MoveSphere(
-		_physicsId,
-		glm::vec2{ position.x, position.z },
-		_radius,
-		true
-	);*/
+	auto transform = GetTransform(fPos, bAngl, _scale);
+	auto const & matrix = transform.GetMatrix();
 
-	auto const matrix = GetTransform(fPos, bAngl, scl).GetMatrix();
-
-	std::vector<glm::vec2> points{};
+	/*std::vector<glm::vec2> points{};
 	for (auto& p : _collider)
 	{
 		auto const p_to = matrix * p;
 		points.emplace_back(glm::vec2{ p_to.x, p_to.z });
-	}
+	}*/
+	glm::vec2 max = fPos + _flatColliderDimension * 0.5f;
+	glm::vec2 min = fPos - _flatColliderDimension * 0.5f;
 
-	return !Physics2D::Instance->MoveBox(
+	bool success = Physics2D::Instance->MoveAABB(
 		_physicsId,
-		points[0],
-		points[1],
-		points[2],
-		points[3]
+		min,
+		max,
+		checkForCollision
 	);
 
+	if (success == true)
+	{
+		_meshInstance->SetTransform(transform);
+		_flatPosition = fPos;
+		_baseAngle = bAngl;
+	}
+
+	return success;
 }
 
 MFA::Transform TankEntity::GetTransform(glm::vec2 fPos, float bAngl, float scl) {
@@ -134,59 +136,67 @@ void GameInstance::reset() {
 }
 
 void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA, bool inputB) {
-	glm::vec2 player_new_pos = player.flatPosition + player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
-	float player_new_angle = fmodf(player.baseAngle + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
 
-	if (!inputA && _inputA) {
-		player_bullets.emplace_back(*_pBulletRenderer, player.ShootPos(), player.baseAngle, 0.1f);
-	}
-	// TODO: Enemy should handle collision too
-	for (TankAI& e : simple_tank_enemies) {
-		switch (e.state)
-		{
-		case TankAI::TankAiState::MOVING:
-		{
-			float delta_dist = glm::dot(-e.entity.BaseDir(), e.path_queue.back() - e.entity.flatPosition);
-			if (delta_dist > 1e-3f) {
-				e.entity.flatPosition -= e.entity.BaseDir() * PLAYER_SPEED * delta;
-			}
-			else {
-				e.path_queue.pop_back();
-				e.state = TankAI::TankAiState::AT_NODE;
-			}
+	{
+		auto const player_new_pos = player.GetFPos() + player.BaseDir() * joystickInp.y * PLAYER_SPEED * delta;
+		auto const player_new_angle = fmodf(player.GetBAngle() + joystickInp.x * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
+		player.Move(player_new_pos, player_new_angle, true);
+		/*if (!player.CheckCollision(player_new_pos, player_new_angle, player._scale)) {
+			player._flatPosition = player_new_pos;
+			player._baseAngle = player_new_angle;
 		}
-			break;
-		case TankAI::TankAiState::AT_NODE:
-		{
-			while (e.path_queue.empty()) {
-				auto new_goal = map.RandomTile();
-				e.path_queue = map.AStar(map.PositionCoord(e.entity.flatPosition), new_goal);
-			}
-			float goal_angle = e.entity.AimAt(e.path_queue.back() - e.entity.flatPosition);
-			float delta_angle = goal_angle - e.entity.baseAngle;
-			delta_angle = delta_angle > glm::pi<float>() ? delta_angle - glm::two_pi<float>() : delta_angle;
-			if (fabsf(delta_angle) > 1e-2f) {
-				float angular_vel = delta_angle > 0.f ? 1.f : -1.f;
-				e.entity.baseAngle = fmodf(e.entity.baseAngle + angular_vel * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
-			}
-			else {
-				e.state = TankAI::TankAiState::MOVING;
-			}
-		}
-			break;
-		default: break;
-		}
-		e.entity.UpdateMI();
-	}
+		player.UpdateMI();*/
 
-	if (!player.CheckCollision(player_new_pos, player_new_angle, player.scale)) {
-		player.flatPosition = player_new_pos;
-		player.baseAngle = player_new_angle;
-	}
-	player.UpdateMI();
+		if (!inputA && _inputA) {
+			player_bullets.emplace_back(*_pBulletRenderer, player.ShootPos(), player.GetBAngle(), 0.1f);
+		}
 
-	_inputA = inputA;
-	_inputB = inputB;
+		_inputA = inputA;
+		_inputB = inputB;
+	}
+	{
+		// TODO: Enemy should handle collision too
+		for (TankAI& e : simple_tank_enemies) {
+			auto enemy_pos = e.entity.GetFPos();
+			auto enemy_angle = e.entity.GetBAngle();
+			switch (e.state)
+			{
+				case TankAI::TankAiState::MOVING:
+				{
+					float delta_dist = glm::dot(-e.entity.BaseDir(), e.path_queue.back() - enemy_pos);
+					if (delta_dist > 1e-3f) {
+						enemy_pos -= e.entity.BaseDir() * PLAYER_SPEED * delta;
+					}
+					else {
+						e.path_queue.pop_back();
+						e.state = TankAI::TankAiState::AT_NODE;
+					}
+				}
+				break;
+				case TankAI::TankAiState::AT_NODE:
+				{
+					while (e.path_queue.empty()) {
+						auto new_goal = map.RandomTile();
+						e.path_queue = map.AStar(map.PositionCoord(enemy_pos), new_goal);
+					}
+					float goal_angle = e.entity.AimAt(e.path_queue.back() - enemy_pos);
+					float delta_angle = goal_angle - enemy_angle;
+					delta_angle = delta_angle > glm::pi<float>() ? delta_angle - glm::two_pi<float>() : delta_angle;
+					if (fabsf(delta_angle) > 1e-2f) {
+						float angular_vel = delta_angle > 0.f ? 1.f : -1.f;
+						enemy_angle = fmodf(enemy_angle + angular_vel * PLAYER_TURN_SPEED * delta, glm::two_pi<float>());
+					}
+					else {
+						e.state = TankAI::TankAiState::MOVING;
+					}
+				}
+				break;
+				default: break;
+			}
+			e.entity.Move(enemy_pos, enemy_angle, true);
+			//e.entity.UpdateMI();
+		}
+	}
 
 	std::vector<std::list<BulletEntity>::iterator> toRemove;
 	for (std::list<BulletEntity>::iterator it = player_bullets.begin(); it != player_bullets.end(); ++it) {

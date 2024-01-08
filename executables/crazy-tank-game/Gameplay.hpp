@@ -13,36 +13,41 @@
 #include <iostream>
 
 struct TankEntity {
-	glm::vec2 flatPosition{};
-	glm::vec2 flatColliderDimension{ 2.f, 2.f };
-	float baseAngle = 0.f, scale = 1.f;
-
+	
 	TankEntity() {}
 
 	TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initScale = 0.16f);
 
-	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(flatPosition, baseAngle, scale); }
-
-	bool CheckCollision(glm::vec2 fPos, float bAngl, float scl);
-
-	static MFA::Transform GetTransform(glm::vec2 fPos, float bAngl, float scl);
+	bool Move(glm::vec2 fPos, float bAngl, bool checkForCollision);
 
 	MFA::MeshInstance* GetMI() const { return _meshInstance.get(); }
 
-	glm::vec2 BaseDir() const { return { -sinf(baseAngle), -cosf(baseAngle) }; }
+	glm::vec2 BaseDir() const { return { -sinf(_baseAngle), -cosf(_baseAngle) }; }
 
-	glm::vec3 ShootPos() const { return glm::vec3{ _radius, 0.f, _radius } + glm::rotate(glm::angleAxis(baseAngle, glm::vec3{ 0.0f, 1.f, 0.f }), _shootPos); }
+	glm::vec3 ShootPos() const { return glm::vec3{ _radius, 0.f, _radius } + glm::rotate(glm::angleAxis(_baseAngle, glm::vec3{ 0.0f, 1.f, 0.f }), _shootPos); }
 
 	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
+
+	float GetBAngle() { return _baseAngle; }
+
+	glm::vec2 GetFPos() { return _flatPosition; }
 
 private:
 
 	void OnHit(Physics2D::Layer layer);
 
+	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(_flatPosition, _baseAngle, _scale); }
+
+	static MFA::Transform GetTransform(glm::vec2 fPos, float bAngl, float scl);
+
+	glm::vec2 _flatPosition{};
+	glm::vec2 _flatColliderDimension{ 0.75f, 0.75f };
+	float _baseAngle = 0.f, _scale = 1.f;
+
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
 	glm::vec3 _shootPos{};
 	float _radius = 0.25f;
-	std::vector<glm::vec4> _collider{};
+	//std::vector<glm::vec4> _collider{};
 	Physics2D::EntityID _physicsId{};
 };
 

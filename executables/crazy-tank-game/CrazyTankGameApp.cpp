@@ -4,10 +4,9 @@
 #include "camera/ArcballCamera.hpp"
 #include "ImportTexture.hpp"
 #include "BedrockMath.hpp"
+#include "Layers.hpp"
 
 #include <omp.h>
-
-#include "Layers.hpp"
 
 using namespace MFA;
 
