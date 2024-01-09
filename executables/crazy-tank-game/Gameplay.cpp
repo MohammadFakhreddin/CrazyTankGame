@@ -211,16 +211,26 @@ void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA
 	for (std::list<BulletEntity>::iterator pbit = player_bullets.begin(); pbit != player_bullets.end(); ++pbit) {
 		glm::vec3 displacement = pbit->BaseDir() * TEST_BULLET_SPEED * delta;
 		Physics2D::HitInfo wallHitInfo{};
-		Physics2D::Instance->Raycast(
-			Layer::WallLayer, 
+		bool hit = Physics2D::Instance->Raycast(
+			Layer::WallLayer | Layer::TankLayer, 
 			pbit->physicsId, 
-			Physics2D::Ray{ glm::vec2{ pbit->position.x, pbit->position.z }, glm::vec2{ pbit->BaseDir().x, pbit->BaseDir().z } *TEST_BULLET_SPEED },
-			1.f, 
+			Physics2D::Ray{ glm::vec2{ pbit->position.x, pbit->position.z }, glm::vec2{ pbit->BaseDir().x, pbit->BaseDir().z } },
+			TEST_BULLET_SPEED* delta,
 			wallHitInfo);
-		if (wallHitInfo.hitTime < delta) {
-			--pbit->hitLeft;
-			if (pbit->hitLeft >= 0) pbit->Reflect(wallHitInfo.hitNormal);
-			else pbToRemove.emplace_back(pbit);
+		if (hit == true) {
+			if ((wallHitInfo.layer & Layer::TankLayer) > 0)
+			{
+				if (wallHitInfo.onHit != nullptr)
+				{
+					wallHitInfo.onHit(Layer::ShellLayer);
+				}
+			}
+			else
+			{
+				--pbit->hitLeft;
+				if (pbit->hitLeft >= 0) pbit->Reflect(wallHitInfo.hitNormal);
+				else pbToRemove.emplace_back(pbit);
+			}
 		}
 		pbit->position += displacement;
 		pbit->lifetimer -= delta;
