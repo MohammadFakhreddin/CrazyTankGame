@@ -133,13 +133,14 @@ MFA::Transform BulletEntity::GetTransform(glm::vec3 pos, float bAngl, float scl)
 
 std::list<GameInstance::TankAI>::iterator GameInstance::AddTankEnemy(const glm::vec2& pos) {
 	simple_tank_enemies.emplace_back(TankEntity{ *_eTankRenderer, pos }, std::vector<glm::vec2>{});
-	std::prev(simple_tank_enemies.end())->entity.physicsId = Physics2D::Instance->Register(
+	auto ret = std::prev(simple_tank_enemies.end());
+	ret->entity.physicsId = Physics2D::Instance->Register(
 		Physics2D::Type::AABB,
 		Layer::TankLayer,
 		Layer::WallLayer | Layer::TankLayer,
-		[&](auto layer) { std::prev(simple_tank_enemies.end())->entity.OnHit(layer); }
+		[ret](auto layer) { ret->entity.OnHit(layer); }
 	);
-	return std::prev(simple_tank_enemies.end());
+	return ret;
 }
 
 void GameInstance::reset() {
