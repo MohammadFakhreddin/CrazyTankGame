@@ -13,6 +13,8 @@
 #include <iostream>
 
 struct TankEntity {
+	int hitCount = 0;
+	Physics2D::EntityID physicsId{};
 	
 	TankEntity() {}
 
@@ -22,70 +24,72 @@ struct TankEntity {
 
 	MFA::MeshInstance* GetMI() const { return _meshInstance.get(); }
 
-	glm::vec2 BaseDir() const { return { -sinf(_baseAngle), -cosf(_baseAngle) }; }
+	glm::vec2 BaseDir() const { return { -sinf(_angle), -cosf(_angle) }; }
 
 	glm::vec3 ShootPos() const { return _meshInstance->GetTransform().GetMatrix() * glm::vec4(_shootPos, 1.f); }
 
 	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
 
-	float GetBAngle() { return _baseAngle; }
+	float GetAngle() { return _angle; }
 
-	glm::vec2 GetFPos() { return _flatPosition; }
-
-private:
+	glm::vec2 GetFlatPos() { return _flatPosition; }
 
 	void OnHit(Physics2D::Layer layer);
 
-	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(_flatPosition, _baseAngle, _scale); }
+private:
+
+	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(_flatPosition, _angle, _scale); }
 
 	static MFA::Transform GetTransform(glm::vec2 fPos, float bAngl, float scl);
 
 	glm::vec2 _flatPosition{};
 	glm::vec2 _flatColliderDimension{ 0.75f, 0.75f };
-	float _baseAngle = 0.f, _scale = 1.f;
+	float _angle = 0.f, _scale = 1.f;
 
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
 	glm::vec3 _shootPos{};
 	float _radius = 0.25f;
 	//std::vector<glm::vec4> _collider{};
-	Physics2D::EntityID _physicsId{};
 };
 
 struct BulletEntity {
 	glm::vec3 position{};
-	float baseAngle = 0.f, scale = 1.f;
+	float angle = 0.f, scale = 1.f;
 	float lifetimer = 4.f;
-	int hitLeft = 2;
+	int bounceLeft = 2;
 	Physics2D::EntityID physicsId{};
+
+	bool isHit = false;
 
 	BulletEntity() {}
 
 	BulletEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec3& initPos = {}, float initBA = 0.f, float initScale = 0.1f);
 
-	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(position, baseAngle, scale); }
+	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(position, angle, scale); }
 
 	static MFA::Transform GetTransform(glm::vec3 pos, float bAngl, float scl);
 
 	MFA::MeshInstance* GetMI() const { return _meshInstance.get(); }
 
-	glm::vec3 BaseDir() const { return { sinf(baseAngle), 0.f, cosf(baseAngle) }; }
+	glm::vec3 BaseDir() const { return { sinf(angle), 0.f, cosf(angle) }; }
 
 	void Reflect(glm::vec2 const& wallNormal) {
-		glm::vec2 in_dir{ sinf(baseAngle), cosf(baseAngle) };
+		glm::vec2 in_dir{ sinf(angle), cosf(angle) };
 		glm::vec2 out_dir = in_dir - 2.f * glm::dot(in_dir, wallNormal) * wallNormal;
-		baseAngle = AimAt(out_dir);
+		angle = AimAt(out_dir);
 	}
 
 	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
 
 private:
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
+	void OnHit(Physics2D::Layer layer) { isHit = true; }
 };
 
 struct GameInstance {
-	static constexpr float PLAYER_SPEED = 4.0f;
-	static constexpr float TEST_BULLET_SPEED = 10.0f;
-	static constexpr float PLAYER_TURN_SPEED = glm::pi<float>();
+	static constexpr float PLAYER_SPEED = 2.0f;
+	static constexpr float TEST_BULLET_SPEED = 4.0f;
+	static constexpr float PLAYER_TURN_SPEED = glm::half_pi<float>();
 	TankEntity player;
 	Map map;
 

@@ -316,6 +316,7 @@ void Physics2D::Update()
 
 void Physics2D::Render(MFA::RT::CommandRecordState& recordState)
 {
+    if (_isMapDirty) { Update(); }
     for (auto * item : _itemList)
     {
 	    switch (item->type)
