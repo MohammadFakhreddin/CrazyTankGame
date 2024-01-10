@@ -111,6 +111,12 @@ GameInstance::GameInstance(std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
 	);
 
 	player = TankEntity(*_pTankRenderer);
+	player.physicsId = Physics2D::Instance->Register(
+		Physics2D::Type::AABB,
+		Layer::TankLayer,
+		Layer::WallLayer | Layer::TankLayer,
+		[&](auto layer) { player.OnHit(layer); }
+	);
 
 	AddTankEnemy(map.CellPosition(map.RandomTile()));
 	AddTankEnemy(map.CellPosition(map.RandomTile()));

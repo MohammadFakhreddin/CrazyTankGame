@@ -263,13 +263,14 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	if (renderMap)
-	{
-		game->Render(recordState);
-	}
-	else {
-		game->RenderNoMap(recordState);
-	}
+	if (!game->player.hitCount)
+		if (renderMap)
+		{
+			game->Render(recordState);
+		}
+		else {
+			game->RenderNoMap(recordState);
+		}
 
 	//if (renderPlayerCollider == true)
 	//{
