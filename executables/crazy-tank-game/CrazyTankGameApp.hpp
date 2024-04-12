@@ -13,6 +13,7 @@
 #include "utils/LineRenderer.hpp"
 #include "utils/PointRenderer.hpp"
 #include "Physics2D.hpp"
+#include "LogicalDevice.hpp"
 
 #include <memory>
 #include <thread>
@@ -22,7 +23,7 @@ class CrazyTankGameApp
 public:
 
     using ShadingPipeline = MFA::FlatShadingPipeline;
-    using CameraBufferTracker = MFA::HostVisibleBufferTracker<ShadingPipeline::ViewProjection>;
+    using CameraBufferTracker = MFA::HostVisibleBufferTracker;
     
     explicit CrazyTankGameApp();
 

@@ -280,7 +280,7 @@ namespace MFA::RenderBackend
     )
     {
         //https://stackoverflow.com/questions/61603693/sdl2-does-not-see-joystick-but-os-does
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK);
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_AUDIO);
         auto * window = SDL_CreateWindow(
             windowName.c_str(),
             posX,
@@ -2755,6 +2755,25 @@ namespace MFA::RenderBackend
 		    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 	    );
     }
+    
+	//-------------------------------------------------------------------------------------------------
+
+    std::shared_ptr<RT::BufferGroup> CreateVertexBufferGroup(
+        VkDevice device,
+        VkPhysicalDevice physicalDevice,
+        VkDeviceSize const bufferSize,
+        int const bufferCount
+    )
+    {
+        return RB::CreateBufferGroup(
+            device, 
+            physicalDevice, 
+            bufferSize,
+            bufferCount,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        );
+    }
 
 	//-------------------------------------------------------------------------------------------------
 
@@ -2893,15 +2912,15 @@ namespace MFA::RenderBackend
 
         VkSamplerCreateInfo sampler_info{};
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        sampler_info.magFilter = VK_FILTER_LINEAR;
-        sampler_info.minFilter = VK_FILTER_LINEAR;
+        sampler_info.magFilter = params.magFilter;
+        sampler_info.minFilter = params.minFilter;
         sampler_info.addressModeU = params.addressModeU;
         sampler_info.addressModeV = params.addressModeV;
         sampler_info.addressModeW = params.addressModeW;
         sampler_info.anisotropyEnable = params.anisotropyEnabled;
         sampler_info.maxAnisotropy = params.maxAnisotropy;
-        sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-        sampler_info.unnormalizedCoordinates = VK_FALSE;
+        sampler_info.borderColor = params.borderColor;
+        sampler_info.unnormalizedCoordinates = params.unnormalizedCoordinates;
         /*
          *TODO Issue for mac:
         "Message code: 0\nMessage: Validation Error: [ VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450 ] Object 0: handle = 0x62200004c918, type = VK_OBJECT_TYPE_DEVICE; | MessageID = 0xf467460 | vkUpdateDescriptorSets() (portability error): sampler comparison not available. The Vulkan spec states: If the [VK_KHR_portability_subset] extension is enabled, and VkPhysicalDevicePortabilitySubsetFeaturesKHR::mutableComparisonSamplers is VK_FALSE, then sampler must have been created with VkSamplerCreateInfo::compareEnable set to VK_FALSE. (https://vulkan.lunarg.com/doc/view/1.2.182.0/mac/1.2-extensions/vkspec.html#VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450)\nLocation: 256275552\n"
@@ -2909,13 +2928,13 @@ namespace MFA::RenderBackend
 #ifdef __PLATFORM_MAC__
         sampler_info.compareEnable = VK_FALSE;
 #else
-        sampler_info.compareEnable = VK_TRUE;
+        sampler_info.compareEnable = params.compareEnable;
 #endif
-        sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+        sampler_info.compareOp = params.compareOp;
         sampler_info.minLod = params.minLod;
         sampler_info.maxLod = params.maxLod;
-        sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        sampler_info.mipLodBias = 0.0f;
+        sampler_info.mipmapMode = params.mipmapMode;
+        sampler_info.mipLodBias = params.mipLodBias;
 
         VK_Check(vkCreateSampler(device, &sampler_info, nullptr, &sampler));
 

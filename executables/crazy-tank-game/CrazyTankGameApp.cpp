@@ -67,9 +67,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 	cameraBufferTracker = std::make_shared<CameraBufferTracker>(
 		cameraBuffer,
-		ShadingPipeline::ViewProjection{
-			.matrix = camera->GetViewProjection()
-		}
+		Alias{camera->GetViewProjection()}
 	);
 
 	device->ResizeEventSignal2.Register([this]()->void {
@@ -228,11 +226,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 	camera->Update(_deltaTimeSec);
 	if (camera->IsDirty())
 	{
-		cameraBufferTracker->SetData(
-			ShadingPipeline::ViewProjection{
-				.matrix = camera->GetViewProjection()
-			}
-		);
+		cameraBufferTracker->SetData(Alias{camera->GetViewProjection()});
 	}
 
 	ui->Update();

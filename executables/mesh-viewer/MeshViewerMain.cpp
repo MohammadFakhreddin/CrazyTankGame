@@ -83,7 +83,7 @@ int main()
 		.windowHeight = 1000,
 		.resizable = true,
 		.fullScreen = false,
-		.applicationName = "Demo-App"
+		.applicationName = "Mesh-Viewer-App"
 	};
 
 	auto const device = LogicalDevice::Instantiate(params);
@@ -98,7 +98,7 @@ int main()
 			swapChainResource,
 			depthResource,
 			msaaResource
-			);
+		);
 
 		auto const ui = std::make_shared<UI>(displayRenderPass);
 
@@ -111,11 +111,11 @@ int main()
 
 		ArcballCamera camera{};
 		camera.Setposition({ 0.0f, -1.0f, 15.0f });
-		
-		auto cameraBufferTracker = std::make_shared<HostVisibleBufferTracker<glm::mat4>>(cameraBuffer, camera.GetViewProjection());
+
+		auto cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBuffer, Alias{ camera.GetViewProjection() });
 
 		device->ResizeEventSignal2.Register([&cameraBufferTracker, &camera]()->void {
-			cameraBufferTracker->SetData(camera.GetViewProjection());
+			cameraBufferTracker->SetData(Alias{ camera.GetViewProjection() });
 		});
 
 		auto defaultSampler = RB::CreateSampler(LogicalDevice::Instance->GetVkDevice(), {});
@@ -127,6 +127,16 @@ int main()
 			FlatShadingPipeline::Params{
 				.maxSets = 100,
 				.cullModeFlags = VK_CULL_MODE_BACK_BIT,
+			}
+		);
+
+		auto const shadingPipeline2 = std::make_shared<FlatShadingPipeline>(
+			displayRenderPass,
+			cameraBuffer,
+			defaultSampler,
+			FlatShadingPipeline::Params{
+				.maxSets = 100,
+				.cullModeFlags = VK_CULL_MODE_FRONT_BIT,
 			}
 		);
 
@@ -151,7 +161,7 @@ int main()
 
 		auto errorTexture = CreateErrorTexture();
 
-		auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/test/tank_0.glb"));
+		auto subMarineModel = Importer::GLTF_Model(Path::Instance->Get("models/submarine/scene.gltf"));
 
 		auto submarineRenderer = std::make_shared<MeshRenderer>(
 			shadingPipeline1,
@@ -168,10 +178,10 @@ int main()
 		glm::mat4 submarineModelMat{};
 		{
 			auto const scale = glm::scale(glm::identity<glm::mat4>(), { 0.02f, 0.02f, 0.02f });
-			auto const rotation1 = glm::angleAxis(glm::radians(180.0f), MFA::Math::UpVec3);
-			auto const rotation2 = glm::angleAxis(glm::radians(-90.0f), MFA::Math::RightVec3);
-			auto const rotation3 = glm::angleAxis(glm::radians(0.0f), MFA::Math::UpVec3);
-			submarineModelMat = glm::toMat4(rotation3) * glm::toMat4(rotation2) * glm::toMat4(rotation1) * scale;
+			// auto const rotation1 = glm::angleAxis(glm::radians(180.0f), MFA::Math::UpVec3);
+			// auto const rotation2 = glm::angleAxis(glm::radians(-90.0f), MFA::Math::RightVec3);
+			// auto const rotation3 = glm::angleAxis(glm::radians(0.0f), MFA::Math::UpVec3);
+			submarineModelMat = /*glm::toMat4(rotation3) * glm::toMat4(rotation2) * glm::toMat4(rotation1) * */scale;
 		}
 		
 		const uint32_t MinDeltaTimeMs = 1000 / 60;
@@ -201,7 +211,7 @@ int main()
 			camera.Update(deltaTimeSec);
 			if (camera.IsDirty())
 			{
-				cameraBufferTracker->SetData(camera.GetViewProjection());
+				cameraBufferTracker->SetData(Alias{ camera.GetViewProjection() });
 			}
 
 			ui->Update();
