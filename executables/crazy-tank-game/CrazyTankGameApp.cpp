@@ -5,6 +5,7 @@
 #include "ImportTexture.hpp"
 #include "BedrockMath.hpp"
 #include "Layers.hpp"
+#include "TankEntity.hpp"
 
 #include <omp.h>
 
@@ -121,25 +122,43 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 	physics2D = std::make_unique<Physics2D>(pointRenderer, lineRenderer);
 
-	{// Tank model
-	}
+	std::vector<int> walls{
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	};
 
-	{
-		std::vector<int> walls{
-			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-			1, 0, 0, 0, 0, 0, 1, 1, 0, 1,
- 			1, 0, 0, 1, 0, 0, 1, 1, 0, 1,
-			1, 0, 0, 1, 0, 0, 1, 1, 0, 1,
-			1, 0, 0, 1, 0, 0, 1, 1, 0, 1,
-			1, 0, 0, 1, 0, 0, 1, 1, 0, 1,
-			1, 0, 0, 0, 0, 0, 1, 1, 0, 1,
-			1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-			1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		};
-		game = std::make_unique<GameInstance>(shadingPipeline, errorTexture, 10, 10, walls);
+	map = std::make_unique<Map>(20, 20, 20, 20, walls, shadingPipeline, errorTexture);
+	tankRenderer = std::make_unique<MeshRenderer>(
+		shadingPipeline,
+		Importer::GLTF_Model(Path::Instance->Get("models/enemy_tank.glb")),
+		errorTexture,
+		true,
+		glm::vec4{0.25f, 0.0f, 0.0f, 1.0f}
+	);
+	{// Player params
+		playerTankParams = std::make_unique<TankEntity::Params>();
+		Transform playerTransform{};
+		playerTransform.Setscale(glm::vec3{0.25f, 0.25f, 0.25f});
+		playerTank = std::make_unique<TankEntity>(*tankRenderer, playerTransform, playerTankParams);
 	}
-
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -151,8 +170,8 @@ CrazyTankGameApp::~CrazyTankGameApp()
 	linePipeline.reset();
 	pointRenderer.reset();
 	pointPipeline.reset();
-	//tankRenderer.reset();
-	game.reset();
+	tankRenderer.reset();
+	map.reset();
 	errorTexture.reset();
 	shadingPipeline.reset();
 	defaultSampler.reset();
@@ -233,8 +252,14 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 	physics2D->Update();
 
-	{// Player matrix
-		game->Update(deltaTimeSec, inputAxis, inputA, inputB);
+	{
+		glm::vec2 direction = inputAxis;
+		auto const magnitude = glm::length(inputAxis);
+		if (magnitude > glm::epsilon<float>())
+		{
+			direction /= magnitude;
+			playerTank->Move(direction, deltaTimeSec);
+		}
 	}
 }
 
@@ -257,27 +282,15 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 
-	if (!game->player.hitCount)
-		if (renderMap)
-		{
-			game->Render(recordState);
-		}
-		else {
-			game->RenderNoMap(recordState);
-		}
+	if (renderPlayer == true)
+	{
+		tankRenderer->Render(recordState,{playerTank->MeshInstance()});
+	}
 
-	//if (renderPlayerCollider == true)
-	//{
-	//	//for (auto const & point : tankCollider)
-	//	//{
-	//	//	pointRenderer->Draw(recordState, playerInstance->GetTransform().GetMatrix() * point);
-	//	//}
-
-	//	for (auto const& point : game->map.AStar({ 0, 0 }, {4, 19}))
-	//	{
-	//		pointRenderer->Draw(recordState, glm::vec3{ point.x, 0, point.y });
-	//	}
-	//}
+	if (renderMap == true)
+	{
+		map->Render(recordState);
+	}
 
 	if (renderPhysics == true)
 	{
@@ -301,6 +314,14 @@ void CrazyTankGameApp::OnUI(float deltaTimeSec)
 	ImGui::Text("Framerate: %f", 1.0f / deltaTimeSec);
 	ImGui::Checkbox("DEBUG render physics", &renderPhysics);
 	ImGui::Checkbox("DEBUG render map", &renderMap);
+	ImGui::Checkbox("DEBUG render player",&renderPlayer);
+	if (ImGui::TreeNode("Debug player params"))
+	{
+		ImGui::InputFloat("Move speed", &playerTankParams->moveSpeed);
+		ImGui::InputFloat("Rotation speed", &playerTankParams->rotationSpeed);
+		ImGui::InputFloat2("Half collider extent", reinterpret_cast<float *>(&playerTankParams->halfColliderExtent));
+		ImGui::TreePop();
+	}
 	ui->EndWindow();
 }
 

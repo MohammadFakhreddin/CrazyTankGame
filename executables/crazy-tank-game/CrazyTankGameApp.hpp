@@ -8,7 +8,7 @@
 #include "utils/MeshRenderer.hpp"
 #include "utils/MeshInstance.hpp"
 #include "Map.hpp"
-#include "Gameplay.hpp"
+//#include "Gameplay.hpp"
 #include "pipeline/PointPipeline.hpp"
 #include "utils/LineRenderer.hpp"
 #include "utils/PointRenderer.hpp"
@@ -17,6 +17,8 @@
 
 #include <memory>
 #include <thread>
+
+#include "TankEntity.hpp"
 
 class CrazyTankGameApp
 {
@@ -77,10 +79,17 @@ private:
     bool inputA{};
     bool inputB{};
 
-    std::unique_ptr<GameInstance> game;
+    //std::unique_ptr<GameInstance> game;
 
     std::unique_ptr<Physics2D> physics2D{};
 
     bool renderPhysics = false;
     bool renderMap = true;
+    bool renderPlayer = true;
+
+    std::unique_ptr<Map> map{};
+    std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
+    std::shared_ptr<TankEntity::Params> playerTankParams{};
+	std::unique_ptr<TankEntity> playerTank{};
+    
 };

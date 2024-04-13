@@ -12,45 +12,6 @@
 #include <list>
 #include <iostream>
 
-struct TankEntity {
-	int hitCount = 0;
-	Physics2D::EntityID physicsId{};
-	
-	TankEntity() {}
-
-	TankEntity(MFA::MeshRenderer const& meshRenderer, const glm::vec2& initPos = {}, float initBA = 0.f, float initScale = 0.16f);
-
-	bool Move(glm::vec2 fPos, float bAngl, bool checkForCollision);
-
-	MFA::MeshInstance* GetMI() const { return _meshInstance.get(); }
-
-	glm::vec2 BaseDir() const { return { -sinf(_angle), -cosf(_angle) }; }
-
-	glm::vec3 ShootPos() const { return _meshInstance->GetTransform().GetMatrix() * glm::vec4(_shootPos, 1.f); }
-
-	float AimAt(const glm::vec2 aim_dir) { return fmodf(glm::half_pi<float>() + atan2f(-aim_dir.y, aim_dir.x), glm::two_pi<float>()); }
-
-	float GetAngle() { return _angle; }
-
-	glm::vec2 GetFlatPos() { return _flatPosition; }
-
-	void OnHit(Physics2D::Layer layer);
-
-private:
-
-	void UpdateMI() { _meshInstance->GetTransform() = GetTransform(_flatPosition, _angle, _scale); }
-
-	static MFA::Transform GetTransform(glm::vec2 fPos, float bAngl, float scl);
-
-	glm::vec2 _flatPosition{};
-	glm::vec2 _flatColliderDimension{ 0.75f, 0.75f };
-	float _angle = 0.f, _scale = 1.f;
-
-	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
-	glm::vec3 _shootPos{};
-	float _radius = 0.25f;
-	//std::vector<glm::vec4> _collider{};
-};
 
 struct BulletEntity {
 	glm::vec3 position{};

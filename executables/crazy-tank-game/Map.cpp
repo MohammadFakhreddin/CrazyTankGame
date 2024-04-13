@@ -59,23 +59,7 @@ Map::Map(
                     auto & transform = wallInstance.GetTransform();
                     transform.Setscale(glm::vec3{ halfWallWidth, 0.5f, halfWallHeight });
                     transform.Setposition(glm::vec3{ static_cast<float>(j) * _wallWidth + startX, 0.3f, static_cast<float>(i) * _wallHeight + startY });
-                    /*auto colliderId = Physics2D::Instance->Register(
-                        Physics2D::Type::Box, 
-                        Layer::WallLayer, 
-                        true, 
-                        nullptr
-                    );
-                    auto const v0 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, -1.0f, 1.0f };
-                    auto const v1 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, 1.0f, 1.0f };
-                    auto const v2 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
-                    auto const v3 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
-                    Physics2D::Instance->MoveBox(
-                        colliderId, 
-                        glm::vec2{ v0.x, v0.z }, 
-                        glm::vec2{ v1.x, v1.z }, 
-                        glm::vec2{ v2.x, v2.z }, 
-                        glm::vec2{ v3.x, v3.z }
-                    );*/
+
                     auto colliderId = Physics2D::Instance->Register(
                         Physics2D::Type::AABB,
                         Layer::WallLayer,
@@ -88,10 +72,10 @@ Map::Map(
                     auto const v24 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
                     auto const v34 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
 
-                    auto const v0 = glm::vec2{ v04.x, v04.z };
-                    auto const v1 = glm::vec2{ v14.x, v14.z };
-                    auto const v2 = glm::vec2{ v24.x, v24.z };
-                    auto const v3 = glm::vec2{ v34.x, v34.z };
+                    auto const v0 = v04.xz();// glm::vec2{ v04.x, v04.z };
+                    auto const v1 = v14.xz();//glm::vec2{ v14.x, v14.z };
+                    auto const v2 = v24.xz();//glm::vec2{ v24.x, v24.z };
+                    auto const v3 = v34.xz();//glm::vec2{ v34.x, v34.z };
 
                     glm::vec2 min{};
                     AABB2D::Min(v0, v1, min);
@@ -129,28 +113,29 @@ void Map::Render(MFA::RT::CommandRecordState& recordState)
     _wallRenderer->Render(recordState, wallInstances);
 }
 
-glm::vec2 Map::CellPosition(Coord const& c) const {
-    return { 
-        -0.5f * static_cast<float>(_rows) * _wallWidth + (static_cast<float>(c.x) + 0.5f) * _wallWidth,
-        -0.5f * static_cast<float>(_columns) * _wallHeight + (static_cast<float>(c.y) + 0.5f) * _wallHeight
-    };
-}
+//glm::vec2 Map::CellPosition(Coord const& c) const {
+//    return { 
+//        -0.5f * static_cast<float>(_rows) * _wallWidth + (static_cast<float>(c.x) + 0.5f) * _wallWidth,
+//        -0.5f * static_cast<float>(_columns) * _wallHeight + (static_cast<float>(c.y) + 0.5f) * _wallHeight
+//    };
+//}
 
-Map::Coord Map::PositionCoord(glm::vec2 const& p) const {
-    return {
-        int((p.x + 0.5f * static_cast<float>(_rows) * _wallWidth) / _wallWidth),
-        int((p.y + 0.5f * static_cast<float>(_columns) * _wallHeight) / _wallHeight)
-    };
-}
+//Map::Coord Map::PositionCoord(glm::vec2 const& p) const {
+//    return {
+//        int((p.x + 0.5f * static_cast<float>(_rows) * _wallWidth) / _wallWidth),
+//        int((p.y + 0.5f * static_cast<float>(_columns) * _wallHeight) / _wallHeight)
+//    };
+//}
 
-int Map::WallAt(Coord const& c) const {
-    return _walls[c.x * _columns + c.y];
-}
+//int Map::WallAt(Coord const& c) const {
+//    return _walls[c.x * _columns + c.y];
+//}
 
-bool Map::IsValid(Coord const& c) const { 
-    return c.x >= 0 && c.x < _rows && c.y >= 0 && c.y < _columns; 
-}
+//bool Map::IsValid(Coord const& c) const { 
+//    return c.x >= 0 && c.x < _rows && c.y >= 0 && c.y < _columns; 
+//}
 
+/*
 std::vector<glm::vec2> Map::AStar(Coord const& c_from, Coord const& c_to) const {
     auto dist = [](Coord const& c_a, Coord const& c_b) -> float { return sqrtf(static_cast<float>((c_a.x - c_b.x) * (c_a.x - c_b.x) + (c_a.y - c_b.y) * (c_a.y - c_b.y))); };
 
@@ -195,17 +180,18 @@ std::vector<glm::vec2> Map::AStar(Coord const& c_from, Coord const& c_to) const 
     //std::reverse(path.begin(), path.end());
     return path;
 }
+*/
 
-Map::Coord Map::RandomTile(bool avoidWall) {
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<> row_dist(0, _rows - 1);
-    std::uniform_int_distribution<> col_dist(0, _columns - 1);
-    Coord result{ row_dist(rng), col_dist(rng) };
-    while (avoidWall && WallAt(result) > 0) {
-        result = { row_dist(rng), col_dist(rng) };
-    }
-    return result;
-}
+//Map::Coord Map::RandomTile(bool avoidWall) {
+//    std::random_device dev;
+//    std::mt19937 rng(dev());
+//    std::uniform_int_distribution<> row_dist(0, _rows - 1);
+//    std::uniform_int_distribution<> col_dist(0, _columns - 1);
+//    Coord result{ row_dist(rng), col_dist(rng) };
+//    while (avoidWall && WallAt(result) > 0) {
+//        result = { row_dist(rng), col_dist(rng) };
+//    }
+//    return result;
+//}
 
 //-----------------------------------------------------------------------

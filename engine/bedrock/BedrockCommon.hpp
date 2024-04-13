@@ -19,7 +19,7 @@ type Get##variable() const                                      \
 }                                                               \
 protected:                                                      \
 
-#define MFA_VARIABLE2(variable, type, default, onChange) \
+#define MFA_VARIABLE2(variable, type, default, onChange)        \
 protected:                                                      \
 type _##variable = default;                                     \
 public:                                                         \
@@ -38,6 +38,28 @@ type Get##variable() const                                      \
     return _##variable;                                         \
 }                                                               \
 protected:                                                      \
+
+
+#define MFA_VARIABLE3(variable, type, default, onChange)        \
+protected:                                                      \
+type _##variable = default;                                     \
+public:                                                         \
+void Set##variable(type value)                                  \
+{                                                               \
+    if (_##variable == value)                                   \
+    {                                                           \
+        return;                                                 \
+    }                                                           \
+    _##variable = value;                                        \
+    onChange();                                                 \
+}                                                               \
+[[nodiscard]]                                                   \
+type const & Get##variable() const                              \
+{                                                               \
+    return _##variable;                                         \
+}                                                               \
+protected:                                                      \
+
 
 #define MFA_UNIQUE_NAME(base_) MFA_CONCAT(base_, __COUNTER__)
 

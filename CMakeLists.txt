@@ -79,6 +79,7 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Loader")
 
 add_definitions(-DGLM_FORCE_SILENT_WARNINGS)
 add_definitions(-DGLM_FORCE_DEPTH_ZERO_TO_ONE)
+add_definitions(-DGLM_FORCE_SWIZZLE)
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 
@@ -99,6 +100,13 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/tiny_gltf
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2/include")
 
+## SDL2_mixer ############################################
+
+set(BUILD_SHARED_LIBS OFF)
+set(SDL2MIXER_WAVPACK OFF)
+add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2_mixer")
+include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2_mixer/include")
+
 ### Linking libraries ####################################
 
 if(OpenMP_CXX_FOUND)
@@ -109,6 +117,7 @@ link_libraries(glm)
 link_libraries(Vulkan::Vulkan)
 link_libraries(SDL2-static)
 link_libraries(LibConfig)
+link_libraries(SDL2_mixer)
 
 ### Bedrock ##############################################
 

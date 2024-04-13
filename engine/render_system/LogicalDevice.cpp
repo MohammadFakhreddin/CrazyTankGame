@@ -104,8 +104,12 @@ namespace MFA
     
     static int SDLEventWatcher(void * data, SDL_Event * event)
     {
-        LogicalDevice::Instance->OnResizeEvent(event);
-        LogicalDevice::Instance->SDL_EventSignal.Emit(event);
+        auto * device = LogicalDevice::Instance; 
+        if (device != nullptr)
+        {
+	        device->OnResizeEvent(event);
+	        device->SDL_EventSignal.Emit(event);
+        }
         return 0;
     }
 
@@ -172,7 +176,7 @@ namespace MFA
         SDL_SetWindowMinimumSize(_window, 100, 100);
 
         SDL_AddEventWatch(SDLEventWatcher, this);
-
+        
         _vkInstance = RB::CreateInstance(
             _applicationName.c_str(),
             _window
