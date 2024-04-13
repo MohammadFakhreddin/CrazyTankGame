@@ -5,7 +5,7 @@
 #include "ImportTexture.hpp"
 #include "BedrockMath.hpp"
 #include "Layers.hpp"
-#include "TankEntity.hpp"
+#include "Tank.hpp"
 
 #include <omp.h>
 
@@ -154,10 +154,10 @@ CrazyTankGameApp::CrazyTankGameApp()
 		glm::vec4{0.25f, 0.0f, 0.0f, 1.0f}
 	);
 	{// Player params
-		playerTankParams = std::make_unique<TankEntity::Params>();
+		playerTankParams = std::make_unique<Tank::Params>();
 		Transform playerTransform{};
 		playerTransform.Setscale(glm::vec3{0.25f, 0.25f, 0.25f});
-		playerTank = std::make_unique<TankEntity>(*tankRenderer, playerTransform, playerTankParams);
+		playerTank = std::make_unique<Tank>(*tankRenderer, playerTransform, playerTankParams);
 	}
 }
 

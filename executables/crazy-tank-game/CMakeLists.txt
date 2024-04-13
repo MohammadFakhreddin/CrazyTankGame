@@ -11,11 +11,9 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/CrazyTankGameApp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Map.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Map.cpp"
-    # "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay.hpp"
-    # "${CMAKE_CURRENT_SOURCE_DIR}/Gameplay.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Layers.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/TankEntity.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/TankEntity.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Tank.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Tank.cpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

@@ -4,7 +4,7 @@
 #include "utils/MeshRenderer.hpp"
 #include <glm/glm.hpp>
 
-class TankEntity {
+class Tank {
 
 public:
 
@@ -16,7 +16,7 @@ public:
 		glm::vec2 halfColliderExtent{0.5, 0.5};
 	};
 
-	explicit TankEntity(
+	explicit Tank(
 		MFA::MeshRenderer const & meshRenderer,
 		MFA::Transform const & transform,
 		std::shared_ptr<Params> params

@@ -1,4 +1,4 @@
-#include "TankEntity.hpp"
+#include "Tank.hpp"
 
 #include "BedrockAssert.hpp"
 #include "Layers.hpp"
@@ -8,7 +8,7 @@ using namespace MFA;
 
 //==================================================================
 
-TankEntity::TankEntity(
+Tank::Tank(
 	MeshRenderer const & meshRenderer, 
 	Transform const & transform,
 	std::shared_ptr<Params> params
@@ -29,7 +29,7 @@ TankEntity::TankEntity(
 
 	{
 		auto const position2d = _transform->Getposition().xz();
-		auto const canMove = Physics2D::Instance->MoveAABB(
+	auto const canMove = Physics2D::Instance->MoveAABB(
 			_physicsId,
 			position2d - _params->halfColliderExtent,
 			position2d + _params->halfColliderExtent,
@@ -41,14 +41,14 @@ TankEntity::TankEntity(
 
 //==================================================================
 
-void TankEntity::OnHit(Physics2D::Layer layer)
+void Tank::OnHit(Physics2D::Layer layer)
 {
 	MFA_LOG_INFO("Tank is hit");
 }
 
 //==================================================================
 
-bool TankEntity::Move(glm::vec2 const & direction, float const deltaTimeSec)
+bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 {
 	bool success = false;
 
@@ -86,7 +86,7 @@ bool TankEntity::Move(glm::vec2 const & direction, float const deltaTimeSec)
 
 //==================================================================
 
-MeshInstance* TankEntity::MeshInstance()
+MeshInstance* Tank::MeshInstance()
 {
 	return _meshInstance.get();
 }

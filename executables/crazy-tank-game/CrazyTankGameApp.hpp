@@ -8,17 +8,15 @@
 #include "utils/MeshRenderer.hpp"
 #include "utils/MeshInstance.hpp"
 #include "Map.hpp"
-//#include "Gameplay.hpp"
 #include "pipeline/PointPipeline.hpp"
 #include "utils/LineRenderer.hpp"
 #include "utils/PointRenderer.hpp"
 #include "Physics2D.hpp"
 #include "LogicalDevice.hpp"
+#include "Tank.hpp"
 
 #include <memory>
 #include <thread>
-
-#include "TankEntity.hpp"
 
 class CrazyTankGameApp
 {
@@ -89,7 +87,7 @@ private:
 
     std::unique_ptr<Map> map{};
     std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
-    std::shared_ptr<TankEntity::Params> playerTankParams{};
-	std::unique_ptr<TankEntity> playerTank{};
+    std::shared_ptr<Tank::Params> playerTankParams{};
+	std::unique_ptr<Tank> playerTank{};
     
 };
