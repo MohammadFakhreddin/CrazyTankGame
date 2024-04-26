@@ -1,62 +1,62 @@
 #pragma once
 
-#define MFA_VARIABLE1(variable, type, default)                  \
+#define MFA_VARIABLE1(variable, type, default, pre)             \
 protected:                                                      \
-type _##variable = default;                                     \
+type pre##variable = default;                                   \
 public:                                                         \
 void Set##variable(type value)                                  \
 {                                                               \
-    if (_##variable == value)                                   \
+    if (pre##variable == value)                                 \
     {                                                           \
         return;                                                 \
     }                                                           \
-    _##variable = value;                                        \
+    pre##variable = value;                                      \
 }                                                               \
 [[nodiscard]]                                                   \
 type Get##variable() const                                      \
 {                                                               \
-    return _##variable;                                         \
+    return pre##variable;                                       \
 }                                                               \
 protected:                                                      \
 
-#define MFA_VARIABLE2(variable, type, default, onChange)        \
+#define MFA_VARIABLE2(variable, type, default, onChange, pre)   \
 protected:                                                      \
-type _##variable = default;                                     \
+type pre##variable = default;                                   \
 public:                                                         \
 void Set##variable(type value)                                  \
 {                                                               \
-    if (_##variable == value)                                   \
+    if (pre##variable == value)                                 \
     {                                                           \
         return;                                                 \
     }                                                           \
-    _##variable = value;                                        \
+    pre##variable = value;                                      \
     onChange();                                                 \
 }                                                               \
 [[nodiscard]]                                                   \
 type Get##variable() const                                      \
 {                                                               \
-    return _##variable;                                         \
+    return pre##variable;                                       \
 }                                                               \
 protected:                                                      \
 
 
-#define MFA_VARIABLE3(variable, type, default, onChange)        \
+#define MFA_VARIABLE3(variable, type, default, onChange, pre)   \
 protected:                                                      \
-type _##variable = default;                                     \
+type pre##variable = default;                                   \
 public:                                                         \
 void Set##variable(type value)                                  \
 {                                                               \
-    if (_##variable == value)                                   \
+    if (pre##variable == value)                                 \
     {                                                           \
         return;                                                 \
     }                                                           \
-    _##variable = value;                                        \
+    pre##variable = value;                                      \
     onChange();                                                 \
 }                                                               \
 [[nodiscard]]                                                   \
 type const & Get##variable() const                              \
 {                                                               \
-    return _##variable;                                         \
+    return pre##variable;                                       \
 }                                                               \
 protected:                                                      \
 

@@ -13,33 +13,189 @@ namespace MFA
 
 	void Transform::SetEulerAngles(glm::vec3 const & eulerAngles)
 	{
-		_isDirty |= _rotation.SetEulerAngles(eulerAngles);
+		mIsDirty |= mLocalRotation.SetEulerAngles(eulerAngles);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	void Transform::SetQuaternion(glm::quat const & quaternion)
+	void Transform::SetLocalQuaternion(glm::quat const & quaternion)
 	{
-		_isDirty |= _rotation.SetQuaternion(quaternion);
+		mIsDirty |= mLocalRotation.SetQuaternion(quaternion);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::mat4 const& Transform::GetMatrix()
+	glm::mat4 const& Transform::LocalTransform()
 	{
-		if (_isDirty == true)
+		if (mIsDirty == true)
 		{
-			_transform = _extraTransform * Math::Translate(_position) * _rotation.GetMatrix() * Math::Scale(_scale);
-			_isDirty = false;
+			mLocalTransform = mLocalExtraTransform * 
+				Math::Translate(mLocalPosition) * 
+				mLocalRotation.GetMatrix() * 
+				Math::Scale(mLocalScale);
+
+			mIsDirty = false;
 		}
-		return _transform;
+		return mLocalTransform;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::mat4 const& Transform::GlobalTransform()
+	{
+		if (mParentDirty == true)
+		{
+			auto const & localTransform = LocalTransform();
+			mGlobalTransform = glm::identity<glm::mat4>();
+			if (mParent != nullptr)
+			{
+				mGlobalTransform *= mParent->GlobalTransform();
+			}
+			mGlobalTransform *= localTransform;
+			mParentDirty = false;
+		}
+		return mGlobalTransform;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	Transform * Transform::Parent() const
+	{
+		return mParent;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	std::set<Transform*> const& Transform::Children()
+	{
+		return mChildren;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void Transform::SetParent(Transform* parent)
+	{
+		if (mParent == parent)
+		{
+			return;
+		}
+		if (mParent != nullptr)
+		{
+			mParent->RemoveChild(this);
+		}
+		mParent = parent;
+		mParentDirty = true;
+		if (mParent != nullptr)
+		{
+			mParent->AddChild(this);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void Transform::AddChild(Transform* child)
+	{
+		if (mChildren.contains(child) == false)
+		{
+			mChildren.emplace(child);
+			child->SetParent(this);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void Transform::RemoveChild(Transform* child)
+	{
+		if (mChildren.contains(child) == true)
+		{
+			mChildren.erase(child);
+			child->SetParent(nullptr);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 Transform::Forward()
+	{
+		if (mForwardDirty == true)
+		{
+			mForward = glm::normalize(GlobalTransform() * Math::ForwardVec4W0);
+			mForwardDirty = false;
+		}
+		return mForward;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 Transform::Right()
+	{
+		if (mRightDirty == true)
+		{
+			mRight = glm::normalize(GlobalTransform() * Math::RightVec4W0);
+			mRightDirty = false;
+		}
+		return mRight;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 Transform::Up()
+	{
+		if (mUpDirty == true)
+		{
+			mUp = glm::normalize(GlobalTransform() * Math::UpVec4W0);
+			mUpDirty = false;
+		}
+		return mUp;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 & Transform::GlobalPosition()
+	{
+		if (mGlobalPositionDirty == true)
+		{
+			mGlobalPosition = GlobalTransform() * glm::vec4{mLocalPosition, 1.0f};
+			mGlobalPositionDirty = false;
+		}
+		return mGlobalPosition;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	Rotation & Transform::GlobalRotation()
+	{
+		if (mGlobalRotationDirty == true)
+		{
+			mGlobalRotation.SetQuaternion(glm::quatLookAt(Forward(),Math::UpVec3));
+			mGlobalRotationDirty = false;
+		}
+		return mGlobalRotation;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
 	void Transform::SetDirty()
 	{
-		_isDirty = true;
+		mIsDirty = true;
+		SetParentDirty();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void Transform::SetParentDirty()
+	{
+		mParentDirty = true;
+		mGlobalPositionDirty = true;
+		mGlobalRotationDirty = true;
+		mForwardDirty = true;
+		mUpDirty = true;
+		mRightDirty = true;
+
+		for(auto * child : mChildren)
+		{
+			child->SetParentDirty();
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------

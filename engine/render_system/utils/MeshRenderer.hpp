@@ -55,8 +55,14 @@ namespace MFA
 
         void DrawNode(
             RT::CommandRecordState& recordState,
-            Asset::GLTF::Node & node, 
-            glm::mat4 const& parentTransform
+            Asset::GLTF::Node & node,
+            glm::mat4 const & model
+        ) const;
+
+        void DrawNode(
+            RT::CommandRecordState& recordState,
+            Asset::GLTF::Node & node,
+            std::vector<Asset::GLTF::Node> & nodes
         ) const;
 
         std::shared_ptr<FlatShadingPipeline> _pipeline{};

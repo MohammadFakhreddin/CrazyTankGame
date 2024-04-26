@@ -14,7 +14,28 @@ namespace MFA
 
 	MeshInstance::MeshInstance(MeshRenderer const& meshRenderer)
 	{
-		_nodes = meshRenderer.GetNodes();
+		auto const & nodes = meshRenderer.GetNodes();
+		_nodes = nodes;
+		for (int i = 0; i < _nodes.size(); ++i)
+		{
+			auto const & otherT = nodes[i].transform;
+			Transform myT{};
+			myT.SetLocalPosition(otherT.GetLocalPosition());
+			myT.SetLocalRotation(otherT.GetLocalRotation());
+			myT.SetLocalScale(otherT.GetLocalScale());
+			_nodes[i].transform = myT;
+		}
+		for (int i = 0; i < nodes.size(); ++i)
+		{
+			if (nodes[i].HasParent() == true)
+			{
+				_nodes[i].transform.SetParent(&_nodes[nodes[i].parent].transform);
+			}
+			else
+			{
+				_nodes[i].transform.SetParent(&_transform);
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------

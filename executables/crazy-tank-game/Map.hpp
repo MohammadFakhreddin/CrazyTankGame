@@ -41,7 +41,7 @@ private:
     std::unique_ptr<MFA::MeshRenderer> _groundRenderer{};
     std::unique_ptr<MFA::MeshRenderer> _wallRenderer{};
 
-	MFA::MeshInstance _groundInstance{};
-    std::vector<MFA::MeshInstance> _wallInstances{};
+	std::unique_ptr<MFA::MeshInstance> _groundInstance{};
+    std::vector<std::unique_ptr<MFA::MeshInstance>> _wallInstances{};
 
 };

@@ -89,5 +89,10 @@ private:
     std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
     std::shared_ptr<Tank::Params> playerTankParams{};
 	std::unique_ptr<Tank> playerTank{};
+
+    // TODO: Some kind of memory pool is needed
+    std::unique_ptr<MFA::MeshRenderer> bulletRenderer{};
+    std::shared_ptr<Bullet::Params> bulletParams{};
+    std::vector<std::unique_ptr<Bullet>> bullets{};
     
 };

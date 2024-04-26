@@ -34,6 +34,8 @@ namespace MFA
 
 		virtual void Update(float dtSec) {}
 
+		virtual void Debug_UI();
+
 	protected:
 
 		void SetProjectionDirty();
@@ -44,15 +46,15 @@ namespace MFA
 
 		void CalculateProjMat();
 
-		MFA_VARIABLE2(fovDeg, float, 40.0f, SetProjectionDirty)
+		MFA_VARIABLE2(fovDeg, float, 40.0f, SetProjectionDirty, _)
 
-		MFA_VARIABLE2(rotation, Rotation, Rotation { glm::vec3(0.0f, 180.0f, 180.0f) }, SetViewDirty);
+		MFA_VARIABLE3(rotation, Rotation, Rotation { glm::vec3(0.0f, 180.0f, 180.0f) }, SetViewDirty, _);
 		
-		MFA_VARIABLE2(position, glm::vec3, {}, SetViewDirty);
+		MFA_VARIABLE3(position, glm::vec3, {}, SetViewDirty, _);
 		
-		MFA_VARIABLE2(farPlane, float, 1000.0f, SetProjectionDirty)
+		MFA_VARIABLE2(farPlane, float, 1000.0f, SetProjectionDirty, _)
 
-		MFA_VARIABLE2(nearPlane, float, 0.01f, SetProjectionDirty)
+		MFA_VARIABLE2(nearPlane, float, 0.01f, SetProjectionDirty, _)
 
 		bool _isProjectionDirty = true;
 

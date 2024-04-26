@@ -41,9 +41,15 @@ CrazyTankGameApp::CrazyTankGameApp()
 		}
 	);
 
-    auto arcBallCamera = std::make_unique<ArcballCamera>();
-	arcBallCamera->SetmaxDistance(30.0f);
-	camera = std::move(arcBallCamera);
+    // auto arcBallCamera = std::make_unique<ArcballCamera>();
+	// arcBallCamera->SetmaxDistance(30.0f);
+	auto observerCamera = std::make_unique<ObserverCamera>();
+	observerCamera->SetfovDeg(40.0f);
+	observerCamera->Setrotation(Rotation(glm::vec3 {-90.0, 180.0, 180.0}));
+	observerCamera->Setposition(glm::vec3 {-0.056, -46.926, 0.023});
+	observerCamera->SetfarPlane(100.0);
+	observerCamera->SetnearPlane(0.010);
+	camera = std::move(observerCamera);
 
 	swapChainResource = std::make_shared<SwapChainRenderResource>();
 	depthResource = std::make_shared<DepthRenderResource>();
@@ -63,8 +69,6 @@ CrazyTankGameApp::CrazyTankGameApp()
 		sizeof(ShadingPipeline::ViewProjection),
 		device->GetMaxFramePerFlight()
 	);
-
-	camera->Setposition({ 0.0f, -1.0f, 15.0f });
 
 	cameraBufferTracker = std::make_shared<CameraBufferTracker>(
 		cameraBuffer,
@@ -146,18 +150,30 @@ CrazyTankGameApp::CrazyTankGameApp()
 	};
 
 	map = std::make_unique<Map>(20, 20, 20, 20, walls, shadingPipeline, errorTexture);
+
 	tankRenderer = std::make_unique<MeshRenderer>(
 		shadingPipeline,
 		Importer::GLTF_Model(Path::Instance->Get("models/enemy_tank.glb")),
 		errorTexture,
 		true,
-		glm::vec4{0.25f, 0.0f, 0.0f, 1.0f}
+		glm::vec4{37.0f / 255.0f, 150.0f / 255.0f, 190.0f / 255.0f, 1.0f}
 	);
+
 	{// Player params
 		playerTankParams = std::make_unique<Tank::Params>();
-		Transform playerTransform{};
-		playerTransform.Setscale(glm::vec3{0.25f, 0.25f, 0.25f});
-		playerTank = std::make_unique<Tank>(*tankRenderer, playerTransform, playerTankParams);
+		playerTank = std::make_unique<Tank>(*tankRenderer, playerTankParams);
+		playerTank->Transform().SetLocalScale(glm::vec3{0.25f, 0.25f, 0.25f});
+	}
+
+	{
+		bulletParams = std::make_shared<Bullet::Params>();
+		bulletRenderer = std::make_unique<MFA::MeshRenderer>(
+			shadingPipeline,
+			MFA::Importer::GLTF_Model(MFA::Path::Instance->Get("models/test/cube.glb")),
+			errorTexture,
+			true,
+			glm::vec4{ 0.0f, 0.25f, 0.0f, 1.0f }
+		);
 	}
 }
 
@@ -171,6 +187,7 @@ CrazyTankGameApp::~CrazyTankGameApp()
 	pointRenderer.reset();
 	pointPipeline.reset();
 	tankRenderer.reset();
+	bulletRenderer.reset();
 	map.reset();
 	errorTexture.reset();
 	shadingPipeline.reset();
@@ -252,7 +269,12 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 	physics2D->Update();
 
+	for (auto & bullet : bullets)
 	{
+		bullet->Update(_deltaTimeSec);
+	}
+
+	{// Player movement
 		glm::vec2 direction = inputAxis;
 		auto const magnitude = glm::length(inputAxis);
 		if (magnitude > glm::epsilon<float>())
@@ -260,6 +282,12 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 			direction /= magnitude;
 			playerTank->Move(direction, deltaTimeSec);
 		}
+	}
+
+	// Player shoot
+	if (inputA == true)
+	{
+		bullets.emplace_back(playerTank->Shoot(bulletParams));
 	}
 }
 
@@ -285,6 +313,11 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 	if (renderPlayer == true)
 	{
 		tankRenderer->Render(recordState,{playerTank->MeshInstance()});
+	}
+
+	for (auto & bullet : bullets)
+	{
+		bulletRenderer->Render(recordState, {bullet->Transform().GlobalTransform()});
 	}
 
 	if (renderMap == true)
@@ -322,6 +355,11 @@ void CrazyTankGameApp::OnUI(float deltaTimeSec)
 		ImGui::InputFloat2("Half collider extent", reinterpret_cast<float *>(&playerTankParams->halfColliderExtent));
 		ImGui::TreePop();
 	}
+	if (ImGui::TreeNode("Debug camera params"))
+	{
+		camera->Debug_UI();
+		ImGui::TreePop();
+	}
 	ui->EndWindow();
 }
 
@@ -340,11 +378,11 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		
 		if (event->key.keysym.sym == SDLK_UP)
 		{
-			inputAxis.y -= modifier;
+			inputAxis.y += modifier;
 		}
 		else if (event->key.keysym.sym == SDLK_DOWN)
 		{
-			inputAxis.y += modifier;
+			inputAxis.y -= modifier;
 		}
 		else if (event->key.keysym.sym == SDLK_LEFT)
 		{
@@ -358,11 +396,11 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
 		inputAxis.y = std::clamp(inputAxis.y, -1.0f, 1.0f);
 
-		if(event->key.keysym.sym == SDLK_a)
+		if(event->key.keysym.sym == SDLK_z)
 		{
 			inputA = modifier > 0;
 		}
-		if (event->key.keysym.sym == SDLK_z)
+		if (event->key.keysym.sym == SDLK_x)
 		{
 			inputB = modifier > 0;
 		}
@@ -385,21 +423,21 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 		const bool is_button_released = event->type == SDL_JOYBUTTONUP;
 		if (event->jbutton.button == 1 /* BUTTON A */) {
 			if (is_button_released) {
-				MFA_LOG_DEBUG("A released");
+				// MFA_LOG_DEBUG("A released");
 				inputA = false;
 			}
 			else {
-				MFA_LOG_DEBUG("A pressed");
+				// MFA_LOG_DEBUG("A pressed");
 				inputA = true;
 			}
 		}
 		else if (event->jbutton.button == 2 /* BUTTON B */) {
 			if (is_button_released) {
-				MFA_LOG_DEBUG("B released");
+				// MFA_LOG_DEBUG("B released");
 				inputB = false;
 			}
 			else {
-				MFA_LOG_DEBUG("B pressed");
+				// MFA_LOG_DEBUG("B pressed");
 				inputB = true;
 			}
 		}

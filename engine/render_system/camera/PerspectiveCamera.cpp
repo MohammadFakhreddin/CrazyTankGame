@@ -3,6 +3,8 @@
 #include "BedrockMath.hpp"
 #include "LogicalDevice.hpp"
 
+#include "imgui.h"
+
 namespace MFA
 {
 
@@ -140,4 +142,39 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
+	void PerspectiveCamera::Debug_UI()
+	{
+		if (ImGui::InputFloat("Fov degree", &_fovDeg))
+		{
+			SetProjectionDirty();
+		}
+		
+		{
+			glm::vec3 eulerAngles = _rotation.GetEulerAngles();
+			if (ImGui::InputFloat3("Euler angles", reinterpret_cast<float *>(&eulerAngles)))
+			{
+				_rotation.SetEulerAngles(eulerAngles);
+				SetProjectionDirty();
+			}
+		}
+
+		if (ImGui::InputFloat3("Position", reinterpret_cast<float *>(&_position)))
+		{
+			SetViewDirty();
+		}
+
+		if (ImGui::InputFloat("Far plane", &_farPlane))
+		{
+			SetProjectionDirty();
+		}
+
+		if (ImGui::InputFloat("Near plane", &_nearPlane))
+		{
+			SetProjectionDirty();
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+
 }
+

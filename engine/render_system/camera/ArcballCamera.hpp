@@ -24,12 +24,12 @@ namespace MFA
 
         void CalculateViewMat() override;
 
-        MFA_VARIABLE1(movementSpeed, float, 10.0f)
-        MFA_VARIABLE1(rotationSpeed, float, 0.4f)
-        MFA_VARIABLE1(movementEnabled, bool, true)
-        MFA_VARIABLE1(scrollSpeed, float, 1.0f)
-        MFA_VARIABLE1(minDistance, float, 1.0f)
-        MFA_VARIABLE1(maxDistance, float, 20.0f)
+        MFA_VARIABLE1(movementSpeed, float, 10.0f, _)
+        MFA_VARIABLE1(rotationSpeed, float, 0.4f, _)
+        MFA_VARIABLE1(movementEnabled, bool, true, _)
+        MFA_VARIABLE1(scrollSpeed, float, 1.0f, _)
+        MFA_VARIABLE1(minDistance, float, 1.0f, _)
+        MFA_VARIABLE1(maxDistance, float, 20.0f, _)
 
         float _mouseX = 0.0f;
         float _mouseY = 0.0f;

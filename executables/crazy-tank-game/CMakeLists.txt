@@ -14,9 +14,10 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/Layers.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Tank.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Tank.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Bullet.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Bullet.cpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})
-
 
 ########################################

@@ -33,7 +33,7 @@ namespace MFA
 
         Transform _transform{};
 
-        std::vector<Asset::GLTF::Node> _nodes{};
+        std::vector<Node> _nodes{};
     
     };
 }

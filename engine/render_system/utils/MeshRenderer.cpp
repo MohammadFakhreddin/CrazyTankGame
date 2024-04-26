@@ -122,7 +122,7 @@ namespace MFA
 				DrawNode(
 					recordState,
 					node,
-					instance->GetTransform().GetMatrix()
+					nodes
 				);
 			}
 		}
@@ -362,18 +362,36 @@ namespace MFA
 	void MeshRenderer::DrawNode(
 		RT::CommandRecordState& recordState, 
 		Asset::GLTF::Node & node,
-		glm::mat4 const& parentTransform
+		glm::mat4 const & model
 	) const
 	{
-		auto const transform = parentTransform * node.transform.GetMatrix();
 		if (node.hasSubMesh())
 		{
-			DrawSubMesh(recordState, node.subMeshIndex, transform);
+			DrawSubMesh(recordState, node.subMeshIndex, model * node.transform.GlobalTransform());
 		}
 
 		for (auto const child : node.children)
 		{
-			DrawNode(recordState, _meshData->nodes[child], transform);
+			DrawNode(recordState, _meshData->nodes[child], model);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void MeshRenderer::DrawNode(
+		RT::CommandRecordState& recordState,
+		Asset::GLTF::Node & node,
+		std::vector<Asset::GLTF::Node> & nodes
+	) const
+	{
+		if(node.hasSubMesh())
+		{
+			DrawSubMesh(recordState, node.subMeshIndex, node.transform.GlobalTransform());
+		}
+
+		for(auto const child : node.children)
+		{
+			DrawNode(recordState, nodes[child], nodes);
 		}
 	}
 

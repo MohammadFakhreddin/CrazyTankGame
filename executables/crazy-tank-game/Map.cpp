@@ -26,10 +26,10 @@ Map::Map(
     );
     
     {
-        _groundInstance = MFA::MeshInstance(*_groundRenderer);
-        auto& transform = _groundInstance.GetTransform();
-        transform.Setscale(glm::vec3{ mapWidth * 0.5f, 0.1f, mapHeight * 0.5f });
-        transform.Setposition(glm::vec3{ 0.0f, -0.3f, 0.0f });
+        _groundInstance = std::make_unique<MFA::MeshInstance>(*_groundRenderer);
+        auto& transform = _groundInstance->GetTransform();
+        transform.SetLocalScale(glm::vec3{ mapWidth * 0.5f, 0.1f, mapHeight * 0.5f });
+        transform.SetLocalPosition(glm::vec3{ 0.0f, -0.3f, 0.0f });
     }
 
     _wallRenderer = std::make_unique<MFA::MeshRenderer>(
@@ -37,7 +37,7 @@ Map::Map(
         cubeCpuModel,
         std::move(errorTexture),
         true,
-        glm::vec4{ 0.0f, 0.0f, 0.5f, 1.0f }
+        glm::vec4{ 0.8f, 0.8f, 0.8f, 1.0f }
     );
 
     {
@@ -54,11 +54,11 @@ Map::Map(
 	        {
 		        if (walls[j * columns + i] > 0)
 		        {
-                    _wallInstances.emplace_back(*_wallRenderer);
+                    _wallInstances.emplace_back(std::make_unique<MFA::MeshInstance>(*_wallRenderer));
                     auto & wallInstance = _wallInstances.back();
-                    auto & transform = wallInstance.GetTransform();
-                    transform.Setscale(glm::vec3{ halfWallWidth, 0.5f, halfWallHeight });
-                    transform.Setposition(glm::vec3{ static_cast<float>(j) * _wallWidth + startX, 0.3f, static_cast<float>(i) * _wallHeight + startY });
+                    auto & transform = wallInstance->GetTransform();
+                    transform.SetLocalScale(glm::vec3{ halfWallWidth, 0.5f, halfWallHeight });
+                    transform.SetLocalPosition(glm::vec3{ static_cast<float>(j) * _wallWidth + startX, 0.3f, static_cast<float>(i) * _wallHeight + startY });
 
                     auto colliderId = Physics2D::Instance->Register(
                         Physics2D::Type::AABB,
@@ -67,10 +67,10 @@ Map::Map(
                         nullptr
                     );
 
-                    auto const v04 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, -1.0f, 1.0f };
-                    auto const v14 = transform.GetMatrix() * glm::vec4{ -1.0f, 0.0f, 1.0f, 1.0f };
-                    auto const v24 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
-                    auto const v34 = transform.GetMatrix() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
+                    auto const v04 = transform.GlobalTransform() * glm::vec4{ -1.0f, 0.0f, -1.0f, 1.0f };
+                    auto const v14 = transform.GlobalTransform() * glm::vec4{ -1.0f, 0.0f, 1.0f, 1.0f };
+                    auto const v24 = transform.GlobalTransform() * glm::vec4{ 1.0f, 0.0f, 1.0f, 1.0f };
+                    auto const v34 = transform.GlobalTransform() * glm::vec4{ 1.0f, 0.0f, -1.0f, 1.0f };
 
                     auto const v0 = v04.xz();// glm::vec2{ v04.x, v04.z };
                     auto const v1 = v14.xz();//glm::vec2{ v14.x, v14.z };
@@ -103,12 +103,12 @@ Map::Map(
 
 void Map::Render(MFA::RT::CommandRecordState& recordState)
 {
-    _groundRenderer->Render(recordState, { &_groundInstance });
+    _groundRenderer->Render(recordState, { _groundInstance.get() });
 
     std::vector<MFA::MeshInstance*> wallInstances{};
     for (auto & instance : _wallInstances)
     {
-        wallInstances.emplace_back(&instance);
+        wallInstances.emplace_back(instance.get());
     }
     _wallRenderer->Render(recordState, wallInstances);
 }

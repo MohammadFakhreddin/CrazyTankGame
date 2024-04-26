@@ -10,15 +10,16 @@ using namespace MFA;
 
 Tank::Tank(
 	MeshRenderer const & meshRenderer, 
-	Transform const & transform,
 	std::shared_ptr<Params> params
 )
 	: _meshInstance(std::make_unique<MFA::MeshInstance>(meshRenderer))
 	, _params(std::move(params))
 {
 
-	_meshInstance->SetTransform(transform);
-	_transform = &_meshInstance->GetTransform();
+	auto & meshTransform = _meshInstance->GetTransform();
+	meshTransform.SetLocalQuaternion(glm::angleAxis(glm::radians(180.0f),Math::UpVec3));
+
+	_transform.AddChild(&meshTransform);
 
 	_physicsId = Physics2D::Instance->Register(
 		Physics2D::Type::AABB,
@@ -27,9 +28,11 @@ Tank::Tank(
 		[this](auto layer)->void {OnHit(layer);}
 	);
 
+	_shootTransform = &_meshInstance->FindNode("Shoot")->transform;
+
 	{
-		auto const position2d = _transform->Getposition().xz();
-	auto const canMove = Physics2D::Instance->MoveAABB(
+		auto const position2d = _transform.GetLocalPosition().xz();
+		auto const canMove = Physics2D::Instance->MoveAABB(
 			_physicsId,
 			position2d - _params->halfColliderExtent,
 			position2d + _params->halfColliderExtent,
@@ -52,7 +55,7 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 {
 	bool success = false;
 
-	auto const & oldPosition = _transform->Getposition();
+	auto const & oldPosition = _transform.GetLocalPosition();
 	auto const moveVector = glm::vec3{direction.x, 0.0, direction.y} * deltaTimeSec * _params->moveSpeed;
 
 	{// Position
@@ -67,15 +70,19 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 
 		if(success == true)
 		{
-			_transform->Setposition(newPosition);
+			_transform.SetLocalPosition(newPosition);
 		}
 	}
+
 	{// Rotation
-		auto const targetQuaternion = glm::quatLookAt(glm::normalize(moveVector),Math::UpVec3);
+		auto const targetQuaternion = 
+			glm::quatLookAt(glm::normalize(moveVector), Math::UpVec3);// * 
+			//glm::angleAxis(glm::radians(180.0f), Math::UpVec3);
+
 		auto const maxDegreesDelta = deltaTimeSec * _params->rotationSpeed;
-		_transform->SetQuaternion(
+		_transform.SetLocalQuaternion(
 			Math::RotateTowards(
-				_transform->Getrotation().GetQuaternion(),
+				_transform.GetLocalRotation().GetQuaternion(),
 				targetQuaternion,maxDegreesDelta
 			)
 		);
@@ -86,9 +93,32 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 
 //==================================================================
 
+std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
+{
+	// TODO: I need time to control the fire rate
+	auto bullet = std::make_unique<Bullet>(std::move(params));
+	bullet->Transform().SetLocalPosition(_shootTransform->GlobalPosition());
+	// Because we rotate the tank mesh we also need to undo the rotation for the bullet. Maybe we can have a child for that instead
+	bullet->Transform().SetLocalQuaternion(
+		_transform.GlobalRotation().GetQuaternion() 
+		//*glm::angleAxis(glm::radians(180.0f),Math::UpVec3)
+	);
+	bullet->Transform().SetLocalScale(glm::one<glm::vec3>() * 0.25f);
+	return bullet;
+}
+
+//==================================================================
+
 MeshInstance* Tank::MeshInstance()
 {
 	return _meshInstance.get();
+}
+
+//==================================================================
+
+Transform & Tank::Transform()
+{
+	return _transform;
 }
 
 //==================================================================

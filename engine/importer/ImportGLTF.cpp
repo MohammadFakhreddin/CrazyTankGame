@@ -186,7 +186,7 @@ namespace MFA::Importer
                     MFA_ASSERT(gltfNode.translation.size() == 3);
                     glm::dvec3 translate{};
                     Memory::Copy<3>(translate, gltfNode.translation.data());
-                    node.transform.Setposition(translate);
+                    node.transform.SetLocalPosition(translate);
                 }
 
                 if (gltfNode.rotation.empty() == false)
@@ -194,7 +194,7 @@ namespace MFA::Importer
                     MFA_ASSERT(gltfNode.rotation.size() == 4);
                     glm::dquat rotation{};
                 	Memory::Copy<4>(rotation, gltfNode.rotation.data());
-                    node.transform.SetQuaternion(rotation);
+                    node.transform.SetLocalQuaternion(rotation);
                 }
 
                 if (gltfNode.scale.empty() == false)
@@ -202,14 +202,14 @@ namespace MFA::Importer
                     MFA_ASSERT(gltfNode.scale.size() == 3);
                     glm::dvec3 scale{};
                 	Memory::Copy<3>(scale, gltfNode.scale.data());
-                    node.transform.Setscale(scale);
+                    node.transform.SetLocalScale(scale);
                 }
 
                 if (gltfNode.matrix.empty() == false)
                 {
                     glm::dmat4 extraTransform{};
                     Memory::Copy<16>(extraTransform, gltfNode.matrix.data());
-                    node.transform.SetextraTransform(extraTransform);
+                    node.transform.SetLocalExtraTransform(extraTransform);
                 }
             }
         }

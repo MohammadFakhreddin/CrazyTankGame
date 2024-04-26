@@ -17,9 +17,9 @@ namespace MFA
 
         void UpdateMousePosition();
 
-        MFA_VARIABLE1(movementSpeed, float, 10.0f)
-        MFA_VARIABLE1(rotationSpeed, float, 2.5f)
-        MFA_VARIABLE1(movementEnabled, bool, true)
+        MFA_VARIABLE1(movementSpeed, float, 10.0f, _)
+        MFA_VARIABLE1(rotationSpeed, float, 2.5f, _)
+        MFA_VARIABLE1(movementEnabled, bool, true, _)
 
         float _mouseX = 0.0f;
         float _mouseY = 0.0f;

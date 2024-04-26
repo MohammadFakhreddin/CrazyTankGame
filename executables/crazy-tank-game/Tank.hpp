@@ -2,6 +2,9 @@
 
 #include "Physics2D.hpp"
 #include "utils/MeshRenderer.hpp"
+#include "utils/MeshInstance.hpp"
+#include "Bullet.hpp"
+
 #include <glm/glm.hpp>
 
 class Tank {
@@ -18,22 +21,28 @@ public:
 
 	explicit Tank(
 		MFA::MeshRenderer const & meshRenderer,
-		MFA::Transform const & transform,
 		std::shared_ptr<Params> params
 	);
 
 	void OnHit(Physics2D::Layer layer);
 
-	bool Move(glm::vec2 const & direction,float deltaTimeSec);
+	bool Move(glm::vec2 const & direction, float deltaTimeSec);
+
+	[[nodiscard]]
+	std::unique_ptr<Bullet> Shoot(std::shared_ptr<Bullet::Params> params);
 
 	[[nodiscard]]
 	MFA::MeshInstance * MeshInstance();
 
+	[[nodiscard]]
+	MFA::Transform & Transform();
+
 private:
 
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
-	MFA::Transform* _transform = nullptr;
+	MFA::Transform _transform;
 	std::shared_ptr<Params> _params{};
 	Physics2D::EntityID _physicsId{};
+	MFA::Transform * _shootTransform = nullptr;
 
 };
