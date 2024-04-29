@@ -2,6 +2,7 @@
 
 #include "BedrockAssert.hpp"
 #include "Layers.hpp"
+#include "Time.hpp"
 #include "utils/MeshInstance.hpp"
 
 using namespace MFA;
@@ -75,9 +76,7 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 	}
 
 	{// Rotation
-		auto const targetQuaternion = 
-			glm::quatLookAt(glm::normalize(moveVector), Math::UpVec3);// * 
-			//glm::angleAxis(glm::radians(180.0f), Math::UpVec3);
+		auto const targetQuaternion = glm::quatLookAt(glm::normalize(moveVector), Math::UpVec3);
 
 		auto const maxDegreesDelta = deltaTimeSec * _params->rotationSpeed;
 		_transform.SetLocalQuaternion(
@@ -95,15 +94,21 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 
 std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
 {
-	// TODO: I need time to control the fire rate
+	auto const now = Time::NowSec();
+
+	if (_shootCooldownEndTime > now)
+	{
+		return nullptr;
+	}
+
 	auto bullet = std::make_unique<Bullet>(std::move(params));
 	bullet->Transform().SetLocalPosition(_shootTransform->GlobalPosition());
 	// Because we rotate the tank mesh we also need to undo the rotation for the bullet. Maybe we can have a child for that instead
-	bullet->Transform().SetLocalQuaternion(
-		_transform.GlobalRotation().GetQuaternion() 
-		//*glm::angleAxis(glm::radians(180.0f),Math::UpVec3)
-	);
+	bullet->Transform().SetLocalQuaternion(_transform.GlobalRotation().GetQuaternion());
 	bullet->Transform().SetLocalScale(glm::one<glm::vec3>() * 0.25f);
+
+	_shootCooldownEndTime = Time::NowSec() + _params->shootCooldown;
+
 	return bullet;
 }
 

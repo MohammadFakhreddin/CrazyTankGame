@@ -115,9 +115,9 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    std::shared_ptr<LogicalDevice> LogicalDevice::Instantiate(InitParams const & params)
+    std::unique_ptr<LogicalDevice> LogicalDevice::Instantiate(InitParams const & params)
     {
-        auto device = std::make_shared<LogicalDevice>(params);
+        auto device = std::make_unique<LogicalDevice>(params);
         if (device->IsValid() == false)
         {
             return nullptr;
@@ -125,6 +125,8 @@ namespace MFA
         //Instance = device.get();
     	return device;
     }
+
+    //-------------------------------------------------------------------------------------------------
 
     LogicalDevice::LogicalDevice(InitParams const & params)
     {

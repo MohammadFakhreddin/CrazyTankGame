@@ -14,6 +14,7 @@
 #include "Physics2D.hpp"
 #include "LogicalDevice.hpp"
 #include "Tank.hpp"
+#include "Time.hpp"
 
 #include <memory>
 #include <thread>
@@ -43,13 +44,11 @@ private:
 
     void OnResize();
 
-    uint32_t _deltaTimeMs{};
-    float _deltaTimeSec{};
-
     // Render parameters
-	std::shared_ptr<MFA::Path> path{};
-	std::shared_ptr<MFA::LogicalDevice> device{};
+	std::unique_ptr<MFA::Path> path{};
+	std::unique_ptr<MFA::LogicalDevice> device{};
 	std::shared_ptr<MFA::UI> ui{};
+    std::unique_ptr<MFA::Time> time{};
 	std::shared_ptr<MFA::SwapChainRenderResource> swapChainResource{};
 	std::shared_ptr<MFA::DepthRenderResource> depthResource{};
     // TODO: We might have to disable this

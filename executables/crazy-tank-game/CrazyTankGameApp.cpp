@@ -61,7 +61,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 	);
 
 	ui = std::make_shared<UI>(displayRenderPass);
-    ui->UpdateSignal.Register([this]()->void { OnUI(_deltaTimeSec); });
+    ui->UpdateSignal.Register([this]()->void { OnUI(Time::DeltaTimeSec()); });
 
 	cameraBuffer = RB::CreateHostVisibleUniformBuffer(
 		device->GetVkDevice(),
@@ -209,14 +209,11 @@ CrazyTankGameApp::~CrazyTankGameApp()
 
 void CrazyTankGameApp::Run()
 {
-	const uint32_t MinDeltaTimeMs = 1000 / 120;
-
 	SDL_GL_SetSwapInterval(0);
 	SDL_Event e;
-	_deltaTimeMs = MinDeltaTimeMs;
-	_deltaTimeSec = static_cast<float>(MinDeltaTimeMs) / 1000.0f;
-	uint32_t startTime = SDL_GetTicks();
-
+	
+	time = Time::Instantiate(120);
+	
 	bool shouldQuit = false;
 
 	while (shouldQuit == false)
@@ -232,8 +229,7 @@ void CrazyTankGameApp::Run()
 		}
 
 		device->Update();
-
-		Update(_deltaTimeSec);
+		Update(Time::DeltaTimeSec());
 
 		auto recordState = device->AcquireRecordState(swapChainResource->GetSwapChainImages().swapChain);
 		if (recordState.isValid == true)
@@ -241,16 +237,10 @@ void CrazyTankGameApp::Run()
 			Render(recordState);
 		}
 
-		_deltaTimeMs = SDL_GetTicks() - startTime;
-		if (MinDeltaTimeMs > _deltaTimeMs)
-		{
-			SDL_Delay(MinDeltaTimeMs - _deltaTimeMs);
-		}
-
-		_deltaTimeMs = SDL_GetTicks() - startTime;
-		_deltaTimeSec = static_cast<float>(_deltaTimeMs) / 1000.0f;
-		startTime = SDL_GetTicks();
+		time->Update();
 	}
+
+	time.reset();
 
 	device->DeviceWaitIdle();
 }
@@ -259,7 +249,7 @@ void CrazyTankGameApp::Run()
 
 void CrazyTankGameApp::Update(float deltaTimeSec)
 {
-	camera->Update(_deltaTimeSec);
+	camera->Update(deltaTimeSec);
 	if (camera->IsDirty())
 	{
 		cameraBufferTracker->SetData(Alias{camera->GetViewProjection()});
@@ -271,7 +261,7 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 	for (auto & bullet : bullets)
 	{
-		bullet->Update(_deltaTimeSec);
+		bullet->Update(Time::DeltaTimeSec());
 	}
 
 	{// Player movement
@@ -287,7 +277,11 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 	// Player shoot
 	if (inputA == true)
 	{
-		bullets.emplace_back(playerTank->Shoot(bulletParams));
+		auto bullet = playerTank->Shoot(bulletParams);
+		if (bullet != nullptr)
+		{
+			bullets.emplace_back(std::move(bullet));
+		}
 	}
 }
 
@@ -330,7 +324,7 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 		Physics2D::Instance->Render(recordState);
 	}
 
-	ui->Render(recordState, _deltaTimeSec);
+	ui->Render(recordState, Time::DeltaTimeSec());
 	
 	displayRenderPass->End(recordState);
 	device->EndCommandBuffer(recordState);

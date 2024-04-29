@@ -143,6 +143,12 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/engine/importer")
 include_directories("${CMAKE_SOURCE_DIR}/engine/importer")
 link_libraries(Importer)
 
+### TimeSystem ############################################
+
+add_subdirectory("${CMAKE_SOURCE_DIR}/engine/time_system")
+include_directories("${CMAKE_SOURCE_DIR}/engine/time_system")
+link_libraries(TimeSystem)
+
 ### JobSystem ############################################
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/job_system")

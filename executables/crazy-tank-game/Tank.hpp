@@ -15,8 +15,8 @@ public:
 	{
 		float moveSpeed = 10.0f;
 		float rotationSpeed = 10.0f;
-
 		glm::vec2 halfColliderExtent{0.5, 0.5};
+		float shootCooldown = 0.25f;
 	};
 
 	explicit Tank(
@@ -44,5 +44,7 @@ private:
 	std::shared_ptr<Params> _params{};
 	Physics2D::EntityID _physicsId{};
 	MFA::Transform * _shootTransform = nullptr;
+
+	float _shootCooldownEndTime = -1000.0f;
 
 };

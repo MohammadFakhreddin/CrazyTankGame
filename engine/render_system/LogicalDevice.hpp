@@ -23,7 +23,7 @@ namespace MFA
         };
 
         [[nodiscard]]
-        static std::shared_ptr<LogicalDevice> Instantiate(InitParams const& params);
+        static std::unique_ptr<LogicalDevice> Instantiate(InitParams const& params);
 
         explicit LogicalDevice(InitParams const & params);
         
