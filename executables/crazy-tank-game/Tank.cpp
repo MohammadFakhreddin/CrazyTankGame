@@ -18,7 +18,7 @@ Tank::Tank(
 {
 
 	auto & meshTransform = _meshInstance->GetTransform();
-	meshTransform.SetLocalQuaternion(glm::angleAxis(glm::radians(180.0f),Math::UpVec3));
+	meshTransform.SetLocalQuaternion(glm::angleAxis(glm::radians(0.0f), Math::UpVec3));
 
 	_transform.AddChild(&meshTransform);
 
@@ -82,7 +82,8 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 		_transform.SetLocalQuaternion(
 			Math::RotateTowards(
 				_transform.GetLocalRotation().GetQuaternion(),
-				targetQuaternion,maxDegreesDelta
+				targetQuaternion,
+				maxDegreesDelta
 			)
 		);
 	}
@@ -103,7 +104,6 @@ std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
 
 	auto bullet = std::make_unique<Bullet>(std::move(params));
 	bullet->Transform().SetLocalPosition(_shootTransform->GlobalPosition());
-	// Because we rotate the tank mesh we also need to undo the rotation for the bullet. Maybe we can have a child for that instead
 	bullet->Transform().SetLocalQuaternion(_transform.GlobalRotation().GetQuaternion());
 	bullet->Transform().SetLocalScale(glm::one<glm::vec3>() * 0.25f);
 
@@ -114,7 +114,7 @@ std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
 
 //==================================================================
 
-MeshInstance* Tank::MeshInstance()
+MeshInstance* Tank::MeshInstance() const
 {
 	return _meshInstance.get();
 }

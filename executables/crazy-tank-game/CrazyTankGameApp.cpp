@@ -212,7 +212,7 @@ void CrazyTankGameApp::Run()
 	SDL_GL_SetSwapInterval(0);
 	SDL_Event e;
 	
-	time = Time::Instantiate(120);
+	time = Time::Instantiate(120, 30);
 	
 	bool shouldQuit = false;
 
@@ -359,80 +359,83 @@ void CrazyTankGameApp::OnUI(float deltaTimeSec)
 
 //------------------------------------------------------------------------------------------------------
 
+static float ProcessJoystickAxis(Sint16 joyAxisValue)
+{
+	constexpr Sint16 JOYSTICK_DEADZONE = 8000;
+	return joyAxisValue < -JOYSTICK_DEADZONE ? -1.0 : joyAxisValue > JOYSTICK_DEADZONE ? 1.0 : 0.0;
+}
+
+//------------------------------------------------------------------------------------------------------
+// TODO: Input system for this game
 void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 {
 	if (UI::Instance != nullptr && UI::Instance->HasFocus() == true)
 	{
 		return;
 	}
-	
-	if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
-	{
-		auto const modifier = event->type == SDL_KEYDOWN ? 1.0f : -1.0f;
-		
-		if (event->key.keysym.sym == SDLK_UP)
-		{
-			inputAxis.y += modifier;
-		}
-		else if (event->key.keysym.sym == SDLK_DOWN)
-		{
-			inputAxis.y -= modifier;
-		}
-		else if (event->key.keysym.sym == SDLK_LEFT)
-		{
-			inputAxis.x -= modifier;
-		}
-		else if (event->key.keysym.sym == SDLK_RIGHT)
-		{
-			inputAxis.x += modifier;
-		}
 
-		inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
-		inputAxis.y = std::clamp(inputAxis.y, -1.0f, 1.0f);
-
-		if(event->key.keysym.sym == SDLK_z)
+	{// Keyboard
+		if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
 		{
-			inputA = modifier > 0;
-		}
-		if (event->key.keysym.sym == SDLK_x)
-		{
-			inputB = modifier > 0;
+			auto const modifier = event->type == SDL_KEYDOWN ? 1.0f : -1.0f;
+			if (event->key.keysym.sym == SDLK_LEFT || event->key.keysym.sym == SDLK_RIGHT)
+			{
+				if (event->key.keysym.sym == SDLK_LEFT)
+				{
+					inputAxis.x -= modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_RIGHT)
+				{
+					inputAxis.x += modifier;
+				}
+				inputAxis.x = std::clamp(inputAxis.x, -1.0f, 1.0f);
+			}
+			else if (event->key.keysym.sym == SDLK_UP || event->key.keysym.sym == SDLK_DOWN)
+			{
+				if (event->key.keysym.sym == SDLK_UP)
+				{
+					inputAxis.y += modifier;
+				}
+				else if (event->key.keysym.sym == SDLK_DOWN)
+				{
+					inputAxis.y -= modifier;
+				}
+				inputAxis.y = std::clamp(inputAxis.y, -1.0f, 1.0f);
+			}
+			else if(event->key.keysym.sym == SDLK_z)
+			{
+				inputA = modifier > 0;
+			}
+			else if (event->key.keysym.sym == SDLK_x)
+			{
+				inputB = modifier > 0;
+			}
 		}
 	}
 
-	if (event->type == SDL_JOYAXISMOTION) {
-		const auto process_axis = [](Sint16 joyAxisValue) -> float {
-			constexpr Sint16 JOYSTICK_DEADZONE = 8000;
-			return joyAxisValue < -JOYSTICK_DEADZONE ? -1.0 : joyAxisValue > JOYSTICK_DEADZONE ? 1.0 : 0.0;
-			};
-		if (event->jaxis.axis == 0) {
-			inputAxis.x = process_axis(event->jaxis.value);
+	{// Joystick
+		if (event->type == SDL_JOYAXISMOTION) 
+		{
+			if (event->jaxis.axis == 0) 
+			{
+				inputAxis.x = ProcessJoystickAxis(event->jaxis.value);
+			}
+			else if (event->jaxis.axis == 1) 
+			{
+				inputAxis.y = ProcessJoystickAxis(event->jaxis.value);
+			}
 		}
-		else if (event->jaxis.axis == 1) {
-			inputAxis.y = process_axis(event->jaxis.value);
-		}
-	}
 
-	if (event->type == SDL_JOYBUTTONDOWN || event->type == SDL_JOYBUTTONUP) {
-		const bool is_button_released = event->type == SDL_JOYBUTTONUP;
-		if (event->jbutton.button == 1 /* BUTTON A */) {
-			if (is_button_released) {
-				// MFA_LOG_DEBUG("A released");
-				inputA = false;
+		if (event->type == SDL_JOYBUTTONDOWN || event->type == SDL_JOYBUTTONUP) 
+		{
+			auto const modifier = (event->type == SDL_JOYBUTTONDOWN) ? 1.0f : -1.0f;
+			if (event->jbutton.button == 1 /* BUTTON A */) 
+			{
+				inputA = modifier > 0.0f;
 			}
-			else {
-				// MFA_LOG_DEBUG("A pressed");
-				inputA = true;
-			}
-		}
-		else if (event->jbutton.button == 2 /* BUTTON B */) {
-			if (is_button_released) {
-				// MFA_LOG_DEBUG("B released");
-				inputB = false;
-			}
-			else {
-				// MFA_LOG_DEBUG("B pressed");
-				inputB = true;
+			else if (event->jbutton.button == 2 /* BUTTON B */) 
+			{
+				inputB = modifier > 0.0f;
 			}
 		}
 	}

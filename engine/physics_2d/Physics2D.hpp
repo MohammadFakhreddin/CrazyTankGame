@@ -143,7 +143,7 @@ public:
         int layer{};
         glm::vec2 hitPoint {};
         glm::vec2 hitNormal {};
-        float hitTime{};
+        float hitTime{};            // Hit time is between 0 to 1
         OnHit onHit{};
     };
     [[nodiscard]]
@@ -177,7 +177,7 @@ private:
         Ray const & ray,
 		float rayMaxDistance, 
 		Sphere const& sphere,
-        float & outTime,
+        float & outTime,            // Hit time is between 0 to 1
 		glm::vec2 & outNormal
     );
 
@@ -186,7 +186,7 @@ private:
         Ray const& ray,
         float rayMaxDistance,
         Box const& box,
-        float & outTime,
+        float & outTime,            // Hit time is between 0 to 1
         glm::vec2 & outNormal
     );
 

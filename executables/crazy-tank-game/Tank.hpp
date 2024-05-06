@@ -13,7 +13,7 @@ public:
 
 	struct Params
 	{
-		float moveSpeed = 10.0f;
+		float moveSpeed = 5.0f;
 		float rotationSpeed = 10.0f;
 		glm::vec2 halfColliderExtent{0.5, 0.5};
 		float shootCooldown = 0.25f;
@@ -32,7 +32,7 @@ public:
 	std::unique_ptr<Bullet> Shoot(std::shared_ptr<Bullet::Params> params);
 
 	[[nodiscard]]
-	MFA::MeshInstance * MeshInstance();
+	MFA::MeshInstance * MeshInstance() const;
 
 	[[nodiscard]]
 	MFA::Transform & Transform();

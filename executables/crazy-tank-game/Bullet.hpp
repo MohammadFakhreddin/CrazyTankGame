@@ -12,7 +12,7 @@ public:
 
 	struct Params
 	{
-		float moveSpeed = 10.0f;
+		float moveSpeed = 20.0f;
 		float radius = 0.25f;
 	};
 

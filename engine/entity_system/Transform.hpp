@@ -52,21 +52,21 @@ namespace MFA
 
     private:
 
-        void SetDirty();
+        void SetLocalTransformDirty();
 
-        void SetParentDirty();
+        void SetGlobalTransformDirty();
 
         // Local position
-        MFA_VARIABLE3(LocalPosition, glm::vec3, glm::vec3(0.0f, 0.0f, 0.0f), SetDirty, m)
+        MFA_VARIABLE3(LocalPosition, glm::vec3, glm::vec3(0.0f, 0.0f, 0.0f), SetLocalTransformDirty, m)
         // Local rotation
-    	MFA_VARIABLE3(LocalRotation, Rotation, Rotation(glm::identity<glm::quat>()), SetDirty, m)
+    	MFA_VARIABLE3(LocalRotation, Rotation, Rotation(glm::identity<glm::quat>()), SetLocalTransformDirty, m)
         // Local scale
-    	MFA_VARIABLE3(LocalScale, glm::vec3, glm::vec3(1.0f, 1.0f, 1.0f), SetDirty, m)
+    	MFA_VARIABLE3(LocalScale, glm::vec3, glm::vec3(1.0f, 1.0f, 1.0f), SetLocalTransformDirty, m)
         // Local extra transform
-    	MFA_VARIABLE3(LocalExtraTransform, glm::mat4, glm::identity<glm::mat4>(), SetDirty, m)
+    	MFA_VARIABLE3(LocalExtraTransform, glm::mat4, glm::identity<glm::mat4>(), SetLocalTransformDirty, m)
         
-        bool mIsDirty = true;
-        bool mParentDirty = true;
+        bool mIsLocalTransformDirty = true;
+        bool mGlobalTransformDirty = true;
 
         // Note: Do not use this variable directly use the function instead
         glm::mat4 mLocalTransform{};

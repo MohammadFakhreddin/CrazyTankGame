@@ -13,28 +13,36 @@ namespace MFA
 
 	void Transform::SetEulerAngles(glm::vec3 const & eulerAngles)
 	{
-		mIsDirty |= mLocalRotation.SetEulerAngles(eulerAngles);
+		mIsLocalTransformDirty |= mLocalRotation.SetEulerAngles(eulerAngles);
+		if (mIsLocalTransformDirty == true)
+		{
+			SetGlobalTransformDirty();
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
 	void Transform::SetLocalQuaternion(glm::quat const & quaternion)
 	{
-		mIsDirty |= mLocalRotation.SetQuaternion(quaternion);
+		mIsLocalTransformDirty |= mLocalRotation.SetQuaternion(quaternion);
+		if (mIsLocalTransformDirty == true)
+		{
+			SetGlobalTransformDirty();
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
 	glm::mat4 const& Transform::LocalTransform()
 	{
-		if (mIsDirty == true)
+		if (mIsLocalTransformDirty == true)
 		{
 			mLocalTransform = mLocalExtraTransform * 
 				Math::Translate(mLocalPosition) * 
 				mLocalRotation.GetMatrix() * 
 				Math::Scale(mLocalScale);
 
-			mIsDirty = false;
+			mIsLocalTransformDirty = false;
 		}
 		return mLocalTransform;
 	}
@@ -43,7 +51,7 @@ namespace MFA
 
 	glm::mat4 const& Transform::GlobalTransform()
 	{
-		if (mParentDirty == true)
+		if (mGlobalTransformDirty == true)
 		{
 			auto const & localTransform = LocalTransform();
 			mGlobalTransform = glm::identity<glm::mat4>();
@@ -52,7 +60,7 @@ namespace MFA
 				mGlobalTransform *= mParent->GlobalTransform();
 			}
 			mGlobalTransform *= localTransform;
-			mParentDirty = false;
+			mGlobalTransformDirty = false;
 		}
 		return mGlobalTransform;
 	}
@@ -84,7 +92,7 @@ namespace MFA
 			mParent->RemoveChild(this);
 		}
 		mParent = parent;
-		mParentDirty = true;
+		mGlobalTransformDirty = true;
 		if (mParent != nullptr)
 		{
 			mParent->AddChild(this);
@@ -175,17 +183,17 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	void Transform::SetDirty()
+	void Transform::SetLocalTransformDirty()
 	{
-		mIsDirty = true;
-		SetParentDirty();
+		mIsLocalTransformDirty = true;
+		SetGlobalTransformDirty();
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	void Transform::SetParentDirty()
+	void Transform::SetGlobalTransformDirty()
 	{
-		mParentDirty = true;
+		mGlobalTransformDirty = true;
 		mGlobalPositionDirty = true;
 		mGlobalRotationDirty = true;
 		mForwardDirty = true;
@@ -194,7 +202,7 @@ namespace MFA
 
 		for(auto * child : mChildren)
 		{
-			child->SetParentDirty();
+			child->SetGlobalTransformDirty();
 		}
 	}
 

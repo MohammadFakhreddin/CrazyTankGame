@@ -9,9 +9,9 @@ namespace MFA
     {
     public:
 
-        static std::unique_ptr<Time> Instantiate(int maxFramerate);
+        static std::unique_ptr<Time> Instantiate(int maxFramerate = 120,int minFramerate = 30);
 
-        explicit Time(int maxFramerate);
+        explicit Time(int maxFramerate, int minFramerate);
 
         ~Time();
 
@@ -30,6 +30,7 @@ namespace MFA
         int _startTimeMs{};
         int _nowMs{};
         int _minDeltaTimeMs{};
+        int _maxDeltaTimeMs{};
         
         int _deltaTimeMs {};
         float _deltaTimeSec {};

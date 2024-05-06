@@ -80,6 +80,7 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/Vulkan-Loader")
 add_definitions(-DGLM_FORCE_SILENT_WARNINGS)
 add_definitions(-DGLM_FORCE_DEPTH_ZERO_TO_ONE)
 add_definitions(-DGLM_FORCE_SWIZZLE)
+add_definitions(-DGLM_FORCE_LEFT_HANDED)
 add_subdirectory("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 include_directories("${CMAKE_SOURCE_DIR}/engine/libs/glm/glm")
 

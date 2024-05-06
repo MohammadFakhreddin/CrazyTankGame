@@ -245,5 +245,5 @@ namespace MFA::Math
 
     [[nodiscard]]
     glm::dmat3 SkewSymmetricMatrix(glm::dvec3 const& a);
-
+    
 }
