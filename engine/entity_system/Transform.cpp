@@ -39,7 +39,7 @@ namespace MFA
 		{
 			mLocalTransform = mLocalExtraTransform * 
 				Math::Translate(mLocalPosition) * 
-				mLocalRotation.GetMatrix() * 
+				mLocalRotation.GetMatrix() *
 				Math::Scale(mLocalScale);
 
 			mIsLocalTransformDirty = false;
@@ -163,7 +163,7 @@ namespace MFA
 	{
 		if (mGlobalPositionDirty == true)
 		{
-			mGlobalPosition = GlobalTransform() * glm::vec4{mLocalPosition, 1.0f};
+			mGlobalPosition = GlobalTransform() * glm::vec4{0.0, 0.0, 0.0, 1.0f};
 			mGlobalPositionDirty = false;
 		}
 		return mGlobalPosition;

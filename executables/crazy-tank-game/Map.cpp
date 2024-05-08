@@ -62,8 +62,8 @@ Map::Map(
 
                     auto colliderId = Physics2D::Instance->Register(
                         Physics2D::Type::AABB,
-                        Layer::WallLayer,
-                        Layer::WallLayer,
+                        Layer::Wall,
+                        Layer::Wall,
                         nullptr
                     );
 

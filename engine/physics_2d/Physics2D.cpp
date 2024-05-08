@@ -662,7 +662,7 @@ bool Physics2D::RaySphereIntersection(
     auto const t0 = (-B + B2Min4AC) / TwoA;
     auto const t1 = (-B - B2Min4AC) / TwoA;
 
-    auto t = -1.0f;
+    auto t = 1.1f;
 
     if (t0 > 0.0f)
     {

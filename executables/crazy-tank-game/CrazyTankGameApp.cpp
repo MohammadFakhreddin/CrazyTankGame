@@ -264,6 +264,14 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 		bullet->Update(Time::DeltaTimeSec());
 	}
 
+	for (int i = bullets.size() - 1; i >= 0; --i)
+	{
+		if (bullets[i]->IsAlive() == false)
+		{
+			bullets.erase(bullets.begin() + i);
+		}
+	}
+
 	{// Player movement
 		glm::vec2 direction = inputAxis;
 		auto const magnitude = glm::length(inputAxis);

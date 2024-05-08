@@ -13,16 +13,28 @@ Bullet::Bullet(std::shared_ptr<Params> params)
 {
     _physicsId = Physics2D::Instance->Register(
 		Physics2D::Type::Sphere,
-		Layer::ShellLayer,
-		Layer::EmptyLayer,
+		Layer::Bullet,
+		Layer::Empty,
 		[this](auto layer)->void {OnHit(layer);}
 	);
 }
 
 //=============================================================================
 
+Bullet::~Bullet()
+{
+	Die();
+}
+
+//=============================================================================
+
 void Bullet::Update(float deltaTimeSec)
 {
+	if (_isAlive == false)
+	{
+		return;
+	}
+
     auto currPos = _transform.GetLocalPosition();
     auto moveDir = _transform.Forward();// Something is wrong with the forward direction
     auto moveMag = deltaTimeSec * _params->moveSpeed;
@@ -35,7 +47,7 @@ void Bullet::Update(float deltaTimeSec)
     {
 		Physics2D::HitInfo hitInfo {};
 		auto const isHit = Physics2D::Instance->Raycast(
-			Layer::WallLayer | Layer::TankLayer | Layer::ShellLayer,
+			Layer::Wall | Layer::Tank | Layer::Bullet,
 			_physicsId,
 			Physics2D::Ray {currPos.xz(), moveDir.xz()},
 			moveMag,
@@ -45,14 +57,15 @@ void Bullet::Update(float deltaTimeSec)
 		hitWall = false;
 		if (isHit == true)
 		{
-			if (hitInfo.layer == Layer::WallLayer)
+			if (hitInfo.layer == Layer::Wall)
 			{
+				auto const epsilon = 1e-5f;
 				// TODO: 1e-5 must be base on the bullet radius
-				auto time = glm::max(hitInfo.hitTime - 1e-5f, 0.0f);
+				auto time = glm::max(hitInfo.hitTime - epsilon, 0.0f);
 
 				currPos.x = hitInfo.hitPoint.x;
 				currPos.z = hitInfo.hitPoint.y;
-				currPos -= 1e-5f * moveDir;
+				currPos -= epsilon * moveDir;
 
 				moveMag = (1.0f - time) * moveMag;
 				auto const wallNormal = glm::vec3 {hitInfo.hitNormal.x, 0.0f, hitInfo.hitNormal.y};
@@ -60,13 +73,14 @@ void Bullet::Update(float deltaTimeSec)
 				newPos = currPos + (moveDir * moveMag);
 				hitWall = true;
 			}
-			else if (hitInfo.layer == Layer::TankLayer)
+			else if (hitInfo.layer == Layer::Tank)
 			{
 
 			}
-			else if (hitInfo.layer == Layer::ShellLayer)
+			else if (hitInfo.layer == Layer::Bullet)
 			{
-
+				hitInfo.onHit(Layer::Bullet);
+				OnHit(Layer::Bullet);
 			}
 			else
 			{
@@ -84,7 +98,7 @@ void Bullet::Update(float deltaTimeSec)
         false
     );
 
-    _transform.SetLocalPosition(_transform.GetLocalPosition() + vector);
+    _transform.SetLocalPosition(newPos);
     
 }
 
@@ -97,9 +111,34 @@ MFA::Transform & Bullet::Transform()
 
 //=============================================================================
 
+bool Bullet::IsAlive() const
+{
+	return _isAlive;
+}
+
+//=============================================================================
+
 void Bullet::OnHit(Physics2D::Layer layer)
 {
+	if (layer == Layer::Bullet)
+	{
+		Die();
+	}
+}
 
+//=============================================================================
+
+void Bullet::Die()
+{
+	if (_isAlive == false)
+	{
+		return;
+	}
+	_isAlive = false;
+	if (Physics2D::Instance != nullptr)
+	{
+		Physics2D::Instance->UnRegister(_physicsId);
+	}
 }
 
 //=============================================================================

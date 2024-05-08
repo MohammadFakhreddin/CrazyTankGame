@@ -4,8 +4,8 @@
 
 namespace Layer
 {
-    static constexpr Physics2D::Layer EmptyLayer = 0;
-    static constexpr Physics2D::Layer WallLayer = 1 << 1;
-    static constexpr Physics2D::Layer TankLayer = 1 << 2;
-    static constexpr Physics2D::Layer ShellLayer = 1 << 3;
+    static constexpr Physics2D::Layer Empty = 0;
+    static constexpr Physics2D::Layer Wall = 1 << 1;
+    static constexpr Physics2D::Layer Tank = 1 << 2;
+    static constexpr Physics2D::Layer Bullet = 1 << 3;
 };

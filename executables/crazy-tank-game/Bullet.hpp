@@ -18,18 +18,26 @@ public:
 
 	explicit Bullet(std::shared_ptr<Params> params);
 
+	~Bullet();
+
     void Update(float deltaTimeSec);
 
 	[[nodiscard]]
 	MFA::Transform & Transform();
 
+	[[nodiscard]]
+	bool IsAlive() const;
+
 private:
 
 	void OnHit(Physics2D::Layer layer);
+
+	void Die();
 
     std::shared_ptr<Params> _params{};
 	MFA::Transform _transform {};
 	Physics2D::EntityID _physicsId{};
 
+	bool _isAlive = true;
 
 };

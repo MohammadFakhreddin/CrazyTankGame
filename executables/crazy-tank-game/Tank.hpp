@@ -40,7 +40,7 @@ public:
 private:
 
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};
-	MFA::Transform _transform;
+	MFA::Transform * _transform = nullptr;
 	std::shared_ptr<Params> _params{};
 	Physics2D::EntityID _physicsId{};
 	MFA::Transform * _shootTransform = nullptr;

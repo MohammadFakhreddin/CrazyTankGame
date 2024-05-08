@@ -17,22 +17,19 @@ Tank::Tank(
 	, _params(std::move(params))
 {
 
-	auto & meshTransform = _meshInstance->GetTransform();
-	meshTransform.SetLocalQuaternion(glm::angleAxis(glm::radians(0.0f), Math::UpVec3));
-
-	_transform.AddChild(&meshTransform);
+	_transform = &_meshInstance->GetTransform();
 
 	_physicsId = Physics2D::Instance->Register(
 		Physics2D::Type::AABB,
-		Layer::TankLayer,
-		Layer::TankLayer | Layer::WallLayer,
+		Layer::Tank,
+		Layer::Tank | Layer::Wall,
 		[this](auto layer)->void {OnHit(layer);}
 	);
 
 	_shootTransform = &_meshInstance->FindNode("Shoot")->transform;
 
 	{
-		auto const position2d = _transform.GetLocalPosition().xz();
+		auto const position2d = _transform->GetLocalPosition().xz();
 		auto const canMove = Physics2D::Instance->MoveAABB(
 			_physicsId,
 			position2d - _params->halfColliderExtent,
@@ -56,7 +53,7 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 {
 	bool success = false;
 
-	auto const & oldPosition = _transform.GetLocalPosition();
+	auto const & oldPosition = _transform->GetLocalPosition();
 	auto const moveVector = glm::vec3{direction.x, 0.0, direction.y} * deltaTimeSec * _params->moveSpeed;
 
 	{// Position
@@ -71,7 +68,7 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 
 		if(success == true)
 		{
-			_transform.SetLocalPosition(newPosition);
+			_transform->SetLocalPosition(newPosition);
 		}
 	}
 
@@ -79,9 +76,9 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 		auto const targetQuaternion = glm::quatLookAt(glm::normalize(moveVector), Math::UpVec3);
 
 		auto const maxDegreesDelta = deltaTimeSec * _params->rotationSpeed;
-		_transform.SetLocalQuaternion(
+		_transform->SetLocalQuaternion(
 			Math::RotateTowards(
-				_transform.GetLocalRotation().GetQuaternion(),
+				_transform->GetLocalRotation().GetQuaternion(),
 				targetQuaternion,
 				maxDegreesDelta
 			)
@@ -103,10 +100,9 @@ std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
 	}
 
 	auto bullet = std::make_unique<Bullet>(std::move(params));
-	bullet->Transform().SetLocalPosition(_shootTransform->GlobalPosition());
-	bullet->Transform().SetLocalQuaternion(_transform.GlobalRotation().GetQuaternion());
+	bullet->Transform().SetLocalRotation(_transform->GlobalRotation());
 	bullet->Transform().SetLocalScale(glm::one<glm::vec3>() * 0.25f);
-
+	bullet->Transform().SetLocalPosition(_transform->GlobalPosition());
 	_shootCooldownEndTime = Time::NowSec() + _params->shootCooldown;
 
 	return bullet;
@@ -123,7 +119,7 @@ MeshInstance* Tank::MeshInstance() const
 
 Transform & Tank::Transform()
 {
-	return _transform;
+	return *_transform;
 }
 
 //==================================================================
