@@ -8,8 +8,9 @@ using namespace MFA;
 
 //=============================================================================
 
-Bullet::Bullet(std::shared_ptr<Params> params)
+Bullet::Bullet(std::shared_ptr<Params> params, Physics2D::EntityID const ownerId)
     : _params(std::move(params))
+	, _ownerId(ownerId)
 {
     _physicsId = Physics2D::Instance->Register(
 		Physics2D::Type::Sphere,
@@ -17,6 +18,7 @@ Bullet::Bullet(std::shared_ptr<Params> params)
 		Layer::Empty,
 		[this](auto layer)->void {OnHit(layer);}
 	);
+	_noFriendlyFireRemainingTime = _params->friendlyFireDelay;
 }
 
 //=============================================================================
@@ -35,7 +37,7 @@ void Bullet::Update(float deltaTimeSec)
 		return;
 	}
 
-    auto currPos = _transform.GetLocalPosition();
+	auto currPos = _transform.GetLocalPosition();
     auto moveDir = _transform.Forward();// Something is wrong with the forward direction
     auto moveMag = deltaTimeSec * _params->moveSpeed;
     auto vector = moveMag * moveDir;
@@ -43,12 +45,21 @@ void Bullet::Update(float deltaTimeSec)
     
     bool hitWall = true;
     bool destroyBullet = false;
+
+	std::set<Physics2D::EntityID> excludeIds{_physicsId};
+	if (_noFriendlyFireRemainingTime > 0.0f)
+	{
+		_noFriendlyFireRemainingTime -= deltaTimeSec;
+		excludeIds.emplace(_ownerId);
+	}
+
+	// TODO: This is dangerous and can lead to infinite loop
     do
     {
 		Physics2D::HitInfo hitInfo {};
 		auto const isHit = Physics2D::Instance->Raycast(
 			Layer::Wall | Layer::Tank | Layer::Bullet,
-			_physicsId,
+			excludeIds,
 			Physics2D::Ray {currPos.xz(), moveDir.xz()},
 			moveMag,
 			hitInfo
@@ -60,7 +71,7 @@ void Bullet::Update(float deltaTimeSec)
 			if (hitInfo.layer == Layer::Wall)
 			{
 				auto const epsilon = 1e-5f;
-				// TODO: 1e-5 must be base on the bullet radius
+
 				auto time = glm::max(hitInfo.hitTime - epsilon, 0.0f);
 
 				currPos.x = hitInfo.hitPoint.x;
@@ -75,11 +86,18 @@ void Bullet::Update(float deltaTimeSec)
 			}
 			else if (hitInfo.layer == Layer::Tank)
 			{
-
+				if (hitInfo.onHit != nullptr)
+				{
+					hitInfo.onHit(Layer::Bullet);
+				}
+				OnHit(Layer::Tank);
 			}
 			else if (hitInfo.layer == Layer::Bullet)
 			{
-				hitInfo.onHit(Layer::Bullet);
+				if (hitInfo.onHit != nullptr)
+				{
+					hitInfo.onHit(Layer::Bullet);
+				}
 				OnHit(Layer::Bullet);
 			}
 			else
@@ -120,10 +138,8 @@ bool Bullet::IsAlive() const
 
 void Bullet::OnHit(Physics2D::Layer layer)
 {
-	if (layer == Layer::Bullet)
-	{
-		Die();
-	}
+	// TODO: Explosion effect!
+	Die();
 }
 
 //=============================================================================

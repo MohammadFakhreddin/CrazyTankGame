@@ -19,6 +19,8 @@
 #include <memory>
 #include <thread>
 
+#include "utils/ConsolasFontRenderer.hpp"
+
 class CrazyTankGameApp
 {
 public:
@@ -43,6 +45,12 @@ private:
     void OnSDL_Event(SDL_Event* event);
 
     void OnResize();
+
+    void PrepareCamera();
+
+    void PrepareInGameText();
+
+    void UpdateInGameText(float deltaTimeSec);
 
     // Render parameters
 	std::unique_ptr<MFA::Path> path{};
@@ -93,5 +101,11 @@ private:
     std::unique_ptr<MFA::MeshRenderer> bulletRenderer{};
     std::shared_ptr<Bullet::Params> bulletParams{};
     std::vector<std::unique_ptr<Bullet>> bullets{};
-    
+
+    float passedTime = 0.0f;
+
+    std::unique_ptr<MFA::ConsolasFontRenderer> _fontRenderer{};
+    std::shared_ptr<MFA::RT::SamplerGroup> _fontSampler{};
+    std::unique_ptr<MFA::ConsolasFontRenderer::TextData> _textData{};
+
 };

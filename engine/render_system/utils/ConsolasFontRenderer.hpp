@@ -28,6 +28,7 @@ namespace MFA
         {
             TextAlign textAlign = TextAlign::Left;
             float scale = 1.5f;
+            glm::vec3 color{1.0f, 1.0f, 1.0f};
         };
         
         bool AddText(

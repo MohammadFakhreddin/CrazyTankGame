@@ -38,6 +38,8 @@ Tank::Tank(
 		);
 		MFA_ASSERT(canMove == true);
 	}
+
+	_isAlive == true;
 }
 
 //==================================================================
@@ -45,6 +47,10 @@ Tank::Tank(
 void Tank::OnHit(Physics2D::Layer layer)
 {
 	MFA_LOG_INFO("Tank is hit");
+	if (layer == Layer::Bullet)
+	{
+		_isAlive = false;
+	}
 }
 
 //==================================================================
@@ -99,7 +105,7 @@ std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
 		return nullptr;
 	}
 
-	auto bullet = std::make_unique<Bullet>(std::move(params));
+	auto bullet = std::make_unique<Bullet>(std::move(params), _physicsId);
 	bullet->Transform().SetLocalRotation(_transform->GlobalRotation());
 	bullet->Transform().SetLocalScale(glm::one<glm::vec3>() * 0.25f);
 	bullet->Transform().SetLocalPosition(_transform->GlobalPosition());

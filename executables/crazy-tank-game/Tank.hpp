@@ -47,4 +47,6 @@ private:
 
 	float _shootCooldownEndTime = -1000.0f;
 
+	bool _isAlive = true;
+
 };

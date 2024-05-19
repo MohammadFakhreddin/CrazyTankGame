@@ -9,14 +9,18 @@
 class Bullet
 {
 public:
-
+	// TODO: Support pooling
 	struct Params
 	{
-		float moveSpeed = 20.0f;
-		float radius = 0.25f;
+		float moveSpeed = 20.0f;			// Bullet move speed
+		float radius = 0.25f;				// Bullet radius
+		float friendlyFireDelay = 0.5f;		// Bullet won't hit the owner before this duration 
 	};
 
-	explicit Bullet(std::shared_ptr<Params> params);
+	explicit Bullet(
+		std::shared_ptr<Params> param, 
+		Physics2D::EntityID ownerId
+	);
 
 	~Bullet();
 
@@ -35,6 +39,9 @@ private:
 	void Die();
 
     std::shared_ptr<Params> _params{};
+	Physics2D::EntityID _ownerId{};
+	float _noFriendlyFireRemainingTime = 0.0f;
+
 	MFA::Transform _transform {};
 	Physics2D::EntityID _physicsId{};
 

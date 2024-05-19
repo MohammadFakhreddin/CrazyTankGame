@@ -171,7 +171,14 @@ void TextOverlayPipeline::CreatePipeline()
 		.format = VK_FORMAT_R32G32_SFLOAT,
 		.offset = offsetof(Vertex, uv),
 	});
-	// TODO: Some settings are missing
+	// Color
+	inputAttributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
+		.location = static_cast<uint32_t>(inputAttributeDescriptions.size()),
+		.binding = 0,
+		.format = VK_FORMAT_R32G32B32_SFLOAT,
+		.offset = offsetof(Vertex, color),
+	});
+
 	RB::CreateGraphicPipelineOptions pipelineOptions{};
 	pipelineOptions.useStaticViewportAndScissor = false;
 	pipelineOptions.primitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
@@ -180,6 +187,8 @@ void TextOverlayPipeline::CreatePipeline()
 	pipelineOptions.colorBlendAttachments.blendEnable = VK_TRUE;
 	pipelineOptions.polygonMode = VK_POLYGON_MODE_FILL;
 	pipelineOptions.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	pipelineOptions.depthStencil.depthTestEnable = false;
+	pipelineOptions.depthStencil.depthWriteEnable = false;
 	
 	// pipeline layout
 	std::vector<VkDescriptorSetLayout> setLayout{_descriptorLayout->descriptorSetLayout};

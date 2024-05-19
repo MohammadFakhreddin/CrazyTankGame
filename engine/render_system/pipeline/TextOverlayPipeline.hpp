@@ -14,6 +14,7 @@ namespace MFA
         {
             glm::vec2 position{};
             glm::vec2 uv{};
+            glm::vec3 color{};
         };
 
         explicit TextOverlayPipeline(

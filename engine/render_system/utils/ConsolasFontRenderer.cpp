@@ -23,7 +23,7 @@ namespace MFA
         auto const vertexBuffer = RB::CreateVertexBufferGroup(
             device->GetVkDevice(), 
             device->GetPhysicalDevice(), 
-            maxCharCount * sizeof(glm::vec4),
+            maxCharCount * sizeof(TextOverlayPipeline::Vertex),
             LogicalDevice::Instance->GetMaxFramePerFlight()
         );
 
@@ -108,24 +108,28 @@ namespace MFA
             mapped->position.y = (y + (float)charData->y0 * charH);
             mapped->uv.x = charData->s0;
             mapped->uv.y = charData->t0;
+            mapped->color = params.color;
             mapped++;
 
             mapped->position.x = (x + (float)charData->x1 * charW);
             mapped->position.y = (y + (float)charData->y0 * charH);
             mapped->uv.x = charData->s1;
             mapped->uv.y = charData->t0;
+            mapped->color = params.color;
             mapped++;
 
             mapped->position.x = (x + (float)charData->x0 * charW);
             mapped->position.y = (y + (float)charData->y1 * charH);
             mapped->uv.x = charData->s0;
             mapped->uv.y = charData->t1;
+            mapped->color = params.color;
             mapped++;
 
             mapped->position.x = (x + (float)charData->x1 * charW);
             mapped->position.y = (y + (float)charData->y1 * charH);
             mapped->uv.x = charData->s1;
             mapped->uv.y = charData->t1;
+            mapped->color = params.color;
             mapped++;
 
             x += charData->advance * charW;

@@ -431,7 +431,7 @@ void Physics2D::Render(MFA::RT::CommandRecordState& recordState)
 
 bool Physics2D::Raycast(
     Layer const layerMask,
-    EntityID const excludeId,
+    std::set<EntityID> const & excludeIds,
     Ray const& ray,
     float maxDistance,
     HitInfo& outHitInfo
@@ -489,7 +489,7 @@ bool Physics2D::Raycast(
     
     for (auto * item : _itemList)
     {
-	    if (item->id != excludeId && (item->layer & layerMask) > 0)
+	    if (excludeIds.contains(item->id) == false && (item->layer & layerMask) > 0)
 	    {
             if (item->aabb.Overlap(aabb) == true)
             {
@@ -536,6 +536,7 @@ bool Physics2D::Raycast(
                     outHitInfo.onHit = item->onHit;
                     outHitInfo.hitNormal = normal;
                     outHitInfo.hitTime = time;
+                    outHitInfo.entityId = item->id;
                 }
 		    }
 	    }
@@ -548,56 +549,6 @@ bool Physics2D::Raycast(
 
     return hit;
 }
-
-//-----------------------------------------------------------------------
-
-//bool Physics2D::HasCollision(
-//    glm::vec2 const& position,
-//    EntityID const excludeId,
-//    Layer const layerMask
-//) const
-//{
-//    AABB2D const aabb{ .min = position, .max = position };
-//
-//    for (auto* item : _itemList)
-//    {
-//        if (item->id != excludeId && (item->layer & layerMask) > 0)
-//        {
-//            if (item->aabb.Overlap(aabb) == true)
-//            {
-//                switch (item->type)
-//                {
-//	                case Type::Sphere:
-//	                {
-//                        if (IsInsideSphere(item->sphere, position) == true)
-//                        {
-//                            return true;
-//                        }
-//	                    break;
-//	                }
-//	                case Type::AABB:
-//	                {
-//	                    return true;
-//		            }
-//	                case Type::Box:
-//	                {
-//                        if (IsInsideBox(item->box, position) == true)
-//                        {
-//                            return true;
-//                        }
-//	                    break;
-//	                }
-//	                default:
-//	                {
-//	                    MFA_LOG_ERROR("Item type not handled");
-//	                }
-//                }
-//            }
-//        }
-//    }
-//
-//    return false;
-//}
 
 //-----------------------------------------------------------------------
 

@@ -6,6 +6,8 @@
 #include <glm/vec2.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <set>
+
 #include "glm/gtx/hash.hpp"
 #include "utils/LineRenderer.hpp"
 #include "utils/PointRenderer.hpp"
@@ -140,6 +142,7 @@ public:
 
     struct HitInfo
     {
+        EntityID entityId{};
         int layer{};
         glm::vec2 hitPoint {};
         glm::vec2 hitNormal {};
@@ -149,7 +152,7 @@ public:
     [[nodiscard]]
     bool Raycast(
         Layer layerMask,
-        EntityID excludeId,
+        std::set<EntityID> const & excludeIds,
         Ray const & ray,
         float maxDistance,
         HitInfo& outHitInfo
