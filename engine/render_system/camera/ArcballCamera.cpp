@@ -26,16 +26,19 @@ namespace MFA
 	{
 		UpdateMousePosition();
 
-		if ((std::abs(_mouseRelX) > glm::epsilon<float>() || std::abs(_mouseRelY) > glm::epsilon<float>()) && _leftMouseDown == true)
-		{
-			auto const camVec = _position - _target;
+		auto const camVec = _transform.GetLocalPosition() - _target;
+		auto forward = glm::normalize(camVec);
 
+		if (
+			(std::abs(_mouseRelX) > glm::epsilon<float>() || std::abs(_mouseRelY) > glm::epsilon<float>()) && 
+			_leftMouseDown == true
+		)
+		{
 			auto const rotDt = _rotationSpeed * dtSec;
 
 			float const eulerX = rotDt * _mouseRelX;
 			float const eulerY = -rotDt * _mouseRelY;
 
-			auto const forward = glm::normalize(camVec);
 			auto const biTan = glm::normalize(glm::cross(forward, Math::UpVec3));
 
 			auto const up = glm::normalize(glm::cross(forward, biTan));
@@ -45,13 +48,17 @@ namespace MFA
 
 			auto const newPosition = (rotX * rotY * camVec) + _target;
 
-			if (std::abs(glm::dot(glm::normalize(newPosition - _target), Math::UpVec3)) < 0.99f)
-			{
-				_position = newPosition;
-				SetViewDirty();
-			}
+			auto newForward = glm::normalize(newPosition - _target);
 
+			if (std::abs(glm::dot(newForward, Math::UpVec3)) < 0.99f)
+			{
+				SetLocalPosition(newPosition);
+				forward = newForward;
+			}
 		}
+
+		SetLocalQuaternion(glm::quatLookAt(forward, Math::UpVec3));
+		
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -120,33 +127,20 @@ namespace MFA
 			if (std::abs(event->wheel.y) > 0) // scroll up
 			{
 				// Put code for handling "scroll up" here!
-				auto const camVec = _target - _position;
+				auto position = _transform.GetLocalPosition();
+				auto const camVec = _target - position;
 				auto const camMag = glm::length(camVec);
 				auto const camDir = camVec / camMag;
 				auto const deltaVec = camDir * std::abs(event->wheel.preciseY) * (event->wheel.preciseY > 0.0f ? 1.0f : -1.0f);
-				auto const deltaMag = glm::length(deltaVec + _position - _target);
+				auto const deltaMag = glm::length(deltaVec + position - _target);
 				if (deltaMag >= _minDistance && deltaMag <= _maxDistance)
 				{
-					_position += deltaVec;
+					position += deltaVec;
+					SetLocalPosition(position);
+					SetLocalQuaternion(glm::quatLookAt(-camDir, Math::UpVec3));
 					_isViewDirty = true;
 				}
 			}
 		}
 	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	void ArcballCamera::CalculateViewMat()
-	{
-		auto const camVec = _target - _position;
-
-		_forward = glm::normalize(camVec);
-		_right = glm::normalize(glm::cross(_forward, Math::UpVec3));
-		_up = glm::normalize(glm::cross(_forward, _right));
-
-		_viewMat = glm::lookAt(_position, _target, _up);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
 }

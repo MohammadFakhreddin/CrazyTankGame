@@ -4,13 +4,14 @@
 protected:                                                      \
 type pre##variable = default;                                   \
 public:                                                         \
-void Set##variable(type value)                                  \
+bool Set##variable(type value)                                  \
 {                                                               \
     if (pre##variable == value)                                 \
     {                                                           \
-        return;                                                 \
+        return false;                                           \
     }                                                           \
     pre##variable = value;                                      \
+    return true;                                                \
 }                                                               \
 [[nodiscard]]                                                   \
 type Get##variable() const                                      \
@@ -23,14 +24,15 @@ protected:                                                      \
 protected:                                                      \
 type pre##variable = default;                                   \
 public:                                                         \
-void Set##variable(type value)                                  \
+bool Set##variable(type value)                                  \
 {                                                               \
     if (pre##variable == value)                                 \
     {                                                           \
-        return;                                                 \
+        return false;                                           \
     }                                                           \
     pre##variable = value;                                      \
     onChange();                                                 \
+	return true;                                                \
 }                                                               \
 [[nodiscard]]                                                   \
 type Get##variable() const                                      \
@@ -44,14 +46,15 @@ protected:                                                      \
 protected:                                                      \
 type pre##variable = default;                                   \
 public:                                                         \
-void Set##variable(type value)                                  \
+bool Set##variable(type value)                                  \
 {                                                               \
     if (pre##variable == value)                                 \
     {                                                           \
-        return;                                                 \
+        return false;                                           \
     }                                                           \
     pre##variable = value;                                      \
     onChange();                                                 \
+    return true;                                                \
 }                                                               \
 [[nodiscard]]                                                   \
 type const & Get##variable() const                              \

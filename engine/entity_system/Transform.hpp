@@ -14,9 +14,9 @@ namespace MFA
 
         explicit Transform();
 
-        void SetEulerAngles(glm::vec3 const & eulerAngles);
+        bool SetEulerAngles(glm::vec3 const & eulerAngles);
 
-        void SetLocalQuaternion(glm::quat const & quaternion);
+        bool SetLocalQuaternion(glm::quat const & quaternion);
 
         [[nodiscard]]
         glm::mat4 const& LocalTransform();
@@ -34,21 +34,23 @@ namespace MFA
     	void AddChild(Transform * child);
 
         void RemoveChild(Transform * child);
-        // TODO: Cache when use without change
-        [[nodiscard]]
-        glm::vec3 Forward();
+
+    	[[nodiscard]]
+        glm::vec3 const & Forward();
 
         [[nodiscard]]
-        glm::vec3 Right();
+        glm::vec3 const & Right();
 
         [[nodiscard]]
-        glm::vec3 Up();
+        glm::vec3 const & Up();
 
         [[nodiscard]]
-        glm::vec3 & GlobalPosition();
+        glm::vec3 const & GlobalPosition();
 
         [[nodiscard]]
-        Rotation & GlobalRotation();
+        Rotation const & GlobalRotation();
+
+        void DebugUI();
 
     private:
 

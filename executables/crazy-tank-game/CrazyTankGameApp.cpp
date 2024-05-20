@@ -52,9 +52,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 	);
 
 	ui = std::make_shared<UI>(displayRenderPass);
-    ui->UpdateSignal.Register([this]()->void { OnUI(Time::DeltaTimeSec()); });
-
-	PrepareCamera();
+    ui->UpdateSignal.Register([this]()->void { DebugUI(Time::DeltaTimeSec()); });
 
 	device->ResizeEventSignal2.Register([this]()->void {
 		OnResize();
@@ -62,7 +60,17 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 	defaultSampler = RB::CreateSampler(LogicalDevice::Instance->GetVkDevice(), {});
 
-    shadingPipeline = std::make_shared<ShadingPipeline>(
+	cameraBuffer = RB::CreateHostVisibleUniformBuffer(
+		device->GetVkDevice(),
+		device->GetPhysicalDevice(),
+		sizeof(ShadingPipeline::ViewProjection),
+		device->GetMaxFramePerFlight()
+	);
+
+	MFA_ASSERT(cameraBuffer != nullptr);
+	cameraBufferTracker = std::make_shared<CameraBufferTracker>(cameraBuffer);
+
+	shadingPipeline = std::make_shared<ShadingPipeline>(
         displayRenderPass,
         cameraBuffer,
 		defaultSampler,
@@ -161,6 +169,26 @@ CrazyTankGameApp::CrazyTankGameApp()
 		);
 	}
 
+	MFA_ASSERT(playerTank != nullptr);
+	MFA_ASSERT(cameraBufferTracker != nullptr);
+	gameCamera = std::make_unique<FollowCamera>(playerTank->Transform(),cameraBufferTracker);
+
+	{// Debug camera
+		/*auto observerCamera = std::make_unique<ObserverCamera>();
+		observerCamera->SetfovDeg(40.0f);
+		observerCamera->SetLocalRotation(Rotation(glm::vec3{-90.0f, 0.0f, 0.0f}));
+		observerCamera->SetLocalPosition(glm::vec3{0.0f, +90.0f, 0.0f});
+		observerCamera->SetfarPlane(100.0f);
+		observerCamera->SetnearPlane(0.010f);*/
+		auto arcBallCamera = std::make_unique<ArcballCamera>(playerTank->Transform().GlobalPosition());
+		arcBallCamera->SetfovDeg(40.0f);
+		arcBallCamera->SetLocalRotation(Rotation(glm::vec3{-90.0f, 0.0f, 0.0f}));
+		arcBallCamera->SetLocalPosition(glm::vec3{0.0f, +90.0f, 0.0f});
+		arcBallCamera->SetfarPlane(100.0f);
+		arcBallCamera->SetnearPlane(0.010f);
+		debugCamera = std::move(arcBallCamera);
+	}
+
 	// TODO: We need a spawn position for the enemies
 }
 
@@ -180,17 +208,17 @@ CrazyTankGameApp::~CrazyTankGameApp()
 	shadingPipeline.reset();
 	defaultSampler.reset();
 	cameraBufferTracker.reset();
-	camera.reset();
+	debugCamera.reset();
+	gameCamera.reset();
 	cameraBuffer.reset();
 	ui.reset();
-	_textData.reset();
-	_fontSampler.reset();
-	_fontRenderer.reset();
+	textData.reset();
+	fontSampler.reset();
+	fontRenderer.reset();
 	displayRenderPass.reset();
 	msaaResource.reset();
 	depthResource.reset();
 	swapChainResource.reset();
-	camera.reset();
 	device.reset();
 	path.reset();
 }
@@ -239,10 +267,17 @@ void CrazyTankGameApp::Run()
 
 void CrazyTankGameApp::Update(float deltaTimeSec)
 {
-	camera->Update(deltaTimeSec);
-	if (camera->IsDirty())
+	if (useDebugCamera == true)
 	{
-		cameraBufferTracker->SetData(Alias{camera->GetViewProjection()});
+		debugCamera->Update(deltaTimeSec);
+		if (debugCamera->IsDirty())
+		{
+			cameraBufferTracker->SetData(Alias{debugCamera->ViewProjection()});
+		}
+	}
+	else
+	{
+		gameCamera->Update(deltaTimeSec);
 	}
 
 	ui->Update();
@@ -304,7 +339,7 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	cameraBufferTracker->Update(recordState);
 
-	_textData->vertexData->Update(recordState);
+	textData->vertexData->Update(recordState);
 
 	displayRenderPass->Begin(recordState);
 
@@ -328,7 +363,7 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 		Physics2D::Instance->Render(recordState);
 	}
 
-	_fontRenderer->Draw(recordState,*_textData);
+	fontRenderer->Draw(recordState,*textData);
 
 	ui->Render(recordState, Time::DeltaTimeSec());
 
@@ -341,7 +376,7 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 //------------------------------------------------------------------------------------------------------
 
-void CrazyTankGameApp::OnUI(float deltaTimeSec)
+void CrazyTankGameApp::DebugUI(float deltaTimeSec)
 {
 	ui->BeginWindow("Window");
 	ImGui::Text("Framerate: %f", 1.0f / deltaTimeSec);
@@ -362,9 +397,21 @@ void CrazyTankGameApp::OnUI(float deltaTimeSec)
 		ImGui::InputFloat("Friendly fire delay", &bulletParams->friendlyFireDelay);
 		ImGui::TreePop();
 	}
+	if (ImGui::Checkbox("Use debug camera", &useDebugCamera))
+	{
+		if (useDebugCamera == true)
+		{
+			cameraBufferTracker->SetData(Alias{debugCamera->ViewProjection()});
+		}
+	}
 	if (ImGui::TreeNode("Debug camera params"))
 	{
-		camera->Debug_UI();
+		debugCamera->Debug_UI();
+		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Game Camera params"))
+	{
+		gameCamera->DebugUI();
 		ImGui::TreePop();
 	}
 	ui->EndWindow();
@@ -462,32 +509,6 @@ void CrazyTankGameApp::OnResize()
 
 //------------------------------------------------------------------------------------------------------
 
-void CrazyTankGameApp::PrepareCamera()
-{
-	// TODO: Camera can follow the player
-	auto observerCamera = std::make_unique<ObserverCamera>();
-	observerCamera->SetfovDeg(40.0f);
-	observerCamera->Setrotation(Rotation(glm::vec3{-90.0, 180.0, 180.0}));
-	observerCamera->Setposition(glm::vec3{-0.056, -46.926, 0.023});
-	observerCamera->SetfarPlane(100.0f);
-	observerCamera->SetnearPlane(0.010f);
-	camera = std::move(observerCamera);
-
-	cameraBuffer = RB::CreateHostVisibleUniformBuffer(
-		device->GetVkDevice(),
-		device->GetPhysicalDevice(),
-		sizeof(ShadingPipeline::ViewProjection),
-		device->GetMaxFramePerFlight()
-	);
-
-	cameraBufferTracker = std::make_shared<CameraBufferTracker>(
-		cameraBuffer,
-		Alias{camera->GetViewProjection()}
-	);
-}
-
-//------------------------------------------------------------------------------------------------------
-
 void CrazyTankGameApp::PrepareInGameText()
 {
 	RB::CreateSamplerParams params{};
@@ -503,15 +524,15 @@ void CrazyTankGameApp::PrepareInGameText()
 	params.maxLod = 1.0f;
 	params.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 
-	_fontSampler = RB::CreateSampler(
+	fontSampler = RB::CreateSampler(
 		device->GetVkDevice(),
 		params
 	);
-	MFA_ASSERT(_fontSampler != nullptr);
+	MFA_ASSERT(fontSampler != nullptr);
 
-	auto pipeline = std::make_shared<TextOverlayPipeline>(displayRenderPass, _fontSampler);
-	_fontRenderer = std::make_unique<ConsolasFontRenderer>(pipeline);
-	_textData = _fontRenderer->AllocateTextData();
+	auto pipeline = std::make_shared<TextOverlayPipeline>(displayRenderPass, fontSampler);
+	fontRenderer = std::make_unique<ConsolasFontRenderer>(pipeline);
+	textData = fontRenderer->AllocateTextData();
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -519,9 +540,9 @@ void CrazyTankGameApp::PrepareInGameText()
 void CrazyTankGameApp::UpdateInGameText(float deltaTimeSec)
 {
 	passedTime += deltaTimeSec;
-	_fontRenderer->ResetText(*_textData);
-	_fontRenderer->AddText(
-		*_textData,
+	fontRenderer->ResetText(*textData);
+	fontRenderer->AddText(
+		*textData,
 		"Passed time : " + std::to_string(passedTime),
 		0.0f,
 		0.0f,

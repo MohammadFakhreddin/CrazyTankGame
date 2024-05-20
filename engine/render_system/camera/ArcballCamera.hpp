@@ -22,8 +22,6 @@ namespace MFA
 
         void OnSDL_Event(SDL_Event* event);
 
-        void CalculateViewMat() override;
-
         MFA_VARIABLE1(movementSpeed, float, 10.0f, _)
         MFA_VARIABLE1(rotationSpeed, float, 0.4f, _)
         MFA_VARIABLE1(movementEnabled, bool, true, _)

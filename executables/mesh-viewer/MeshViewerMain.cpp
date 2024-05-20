@@ -110,12 +110,12 @@ int main()
 		);
 
 		ArcballCamera camera{};
-		camera.Setposition({ 0.0f, -1.0f, 15.0f });
+		camera.SetLocalPosition({ 0.0f, -1.0f, 15.0f });
 
-		auto cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBuffer, Alias{ camera.GetViewProjection() });
+		auto cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBuffer, Alias{ camera.ViewProjection() });
 
 		device->ResizeEventSignal2.Register([&cameraBufferTracker, &camera]()->void {
-			cameraBufferTracker->SetData(Alias{ camera.GetViewProjection() });
+			cameraBufferTracker->SetData(Alias{ camera.ViewProjection() });
 		});
 
 		auto defaultSampler = RB::CreateSampler(LogicalDevice::Instance->GetVkDevice(), {});
@@ -178,10 +178,10 @@ int main()
 		glm::mat4 submarineModelMat{};
 		{
 			auto const scale = glm::scale(glm::identity<glm::mat4>(), { 0.02f, 0.02f, 0.02f });
-			// auto const rotation1 = glm::angleAxis(glm::radians(180.0f), MFA::Math::UpVec3);
-			// auto const rotation2 = glm::angleAxis(glm::radians(-90.0f), MFA::Math::RightVec3);
+			 auto const rotation1 = glm::angleAxis(glm::radians(180.0f), MFA::Math::UpVec3);
+			 auto const rotation2 = glm::angleAxis(glm::radians(90.0f), MFA::Math::RightVec3);
 			// auto const rotation3 = glm::angleAxis(glm::radians(0.0f), MFA::Math::UpVec3);
-			submarineModelMat = /*glm::toMat4(rotation3) * glm::toMat4(rotation2) * glm::toMat4(rotation1) * */scale;
+			submarineModelMat = /*glm::toMat4(rotation3) * ) */ glm::toMat4(rotation1) * glm::toMat4(rotation2) * scale;
 		}
 		
 		const uint32_t MinDeltaTimeMs = 1000 / 60;
@@ -211,7 +211,7 @@ int main()
 			camera.Update(deltaTimeSec);
 			if (camera.IsDirty())
 			{
-				cameraBufferTracker->SetData(Alias{ camera.GetViewProjection() });
+				cameraBufferTracker->SetData(Alias{ camera.ViewProjection() });
 			}
 
 			ui->Update();

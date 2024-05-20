@@ -23,27 +23,27 @@ namespace MFA
 					
 					if (event->key.keysym.sym == SDLK_w)
 					{
-						_motionButtons.z += 1.0f * modifier;
+						_motionButtons.z += -1.0f * modifier;
 					}
 					else if (event->key.keysym.sym == SDLK_s)
 					{
-						_motionButtons.z += -1.0f * modifier;
+						_motionButtons.z += +1.0f * modifier;
 					}
 					else if (event->key.keysym.sym == SDLK_d)
 					{
-						_motionButtons.x -= 1.0f * modifier;
+						_motionButtons.x += +1.0f * modifier;
 					}
 					else if (event->key.keysym.sym == SDLK_a)
 					{
-						_motionButtons.x += 1.0f * modifier;
+						_motionButtons.x += -1.0f * modifier;
 					}
 					else if (event->key.keysym.sym == SDLK_q)
 					{
-						_motionButtons.y -= 1.0f * modifier;
+						_motionButtons.y += +1.0f * modifier;
 					}
 					else if (event->key.keysym.sym == SDLK_e)
 					{
-						_motionButtons.y += 1.0f * modifier;
+						_motionButtons.y += -1.0f * modifier;
 					}
 
 					_motionButtons.x = std::clamp(_motionButtons.x, -1.0f, 1.0f);
@@ -84,16 +84,20 @@ namespace MFA
 			SDL_ShowCursor(SDL_DISABLE);
 			if (_mouseRelX != 0.0f || _mouseRelY != 0.0f)
 			{
-				auto eulerAngles = _rotation.GetEulerAngles();
+				auto eulerAngles = _transform.GetLocalRotation().GetEulerAngles();
 				auto const rotationDistance = _rotationSpeed * dtSec;
 				eulerAngles.y = eulerAngles.y + rotationDistance * _mouseRelX;    // Reverse for view mat
 				eulerAngles.x = std::clamp(
 					eulerAngles.x - rotationDistance * _mouseRelY,
-					-90.0f,
-					90.0f
+					-180.0f,
+					180.0f
 				);    // Reverse for view mat
-				_rotation.SetEulerAngles(eulerAngles);
-				SetViewDirty();
+				
+				bool changed = _transform.SetEulerAngles(eulerAngles);
+				if (changed == true)
+				{
+					SetViewDirty();
+				}
 			}
 		}
 		else
@@ -108,29 +112,25 @@ namespace MFA
 			auto const moveDistance = _movementSpeed * dtSec;
 			auto const movementVector = motionDirection * moveDistance;
 
-			auto position = _position;
+			auto position = _transform.GetLocalPosition();
 			if (movementVector.z != 0.0f)
 			{
-				// auto const forward = glm::transpose(_rotation.GetMatrix()) * Math::ForwardVec4W0;
-				// position = position + glm::normalize(glm::vec3{ forward }) *  movementVector.z;
-				position = position + _forward *  movementVector.z;
+				position = position + Forward() *  movementVector.z;
 			}
 			if (movementVector.x != 0.0f)
 			{
-				// auto const right = glm::transpose(_rotation.GetMatrix()) * Math::RightVec4W0;
-				// position = position + glm::normalize(glm::vec3{ right }) * movementVector.x;
-				position = position + _right * movementVector.x;
+				position = position + Right() * movementVector.x;
 			}
 			if (movementVector.y != 0.0f)
 			{
-				// auto const up = glm::transpose(_rotation.GetMatrix()) * Math::UpVec4W0;
-				// position = position + glm::normalize(glm::vec3{ up }) * movementVector.y;
-				position = position + _up * movementVector.y;
+				position = position + Up() * movementVector.y;
 			}
 
-			_position = position;
-
-			SetViewDirty();
+			bool changed = _transform.SetLocalPosition(position);
+			if (changed == true)
+			{
+				SetViewDirty();
+			}
 		}
 	}
 

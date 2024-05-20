@@ -2,39 +2,61 @@
 
 #include "BedrockCommon.hpp"
 #include "BedrockRotation.hpp"
+#include "Transform.hpp"
 
 namespace MFA
 {
+	// TODO: Camera can use transform class
 	class PerspectiveCamera
 	{
 	public:
 
 		explicit PerspectiveCamera();
-		~PerspectiveCamera();
-
-		[[nodiscard]]
-		glm::mat4 const & GetViewProjection();
-
-		[[nodiscard]]
-		glm::mat4 const & GetView();
-
-		glm::mat4 const & GetProjection();
-
-		[[nodiscard]]
-		bool IsDirty() const;
-
-		[[nodiscard]]
-		glm::vec3 const & GetForward() const;
-
-		[[nodiscard]]
-		glm::vec3 const & GetRight() const;
-
-		[[nodiscard]]
-		glm::vec3 const & GetUp() const;
+		virtual ~PerspectiveCamera();
 
 		virtual void Update(float dtSec) {}
 
 		virtual void Debug_UI();
+
+		[[nodiscard]]
+		glm::mat4 const & ViewProjection();
+
+		[[nodiscard]]
+		glm::mat4 const & View();
+
+		glm::mat4 const & Projection();
+
+		void SetLocalPosition(glm::vec3 const & localPosition);
+
+		void SetLocalRotation(Rotation const & localRotation);
+
+		void SetEulerAngles(glm::vec3 const & eulerAngles);
+
+		void SetLocalQuaternion(glm::quat const & quaternion);
+
+		[[nodiscard]]
+		glm::vec3 const & LocalPosition();
+
+		[[nodiscard]]
+		Rotation const & LocalRotation();
+
+		[[nodiscard]]
+		glm::vec3 const & Forward();
+
+		[[nodiscard]]
+		glm::vec3 const & Right();
+
+		[[nodiscard]]
+		glm::vec3 const & Up();
+
+		[[nodiscard]]
+		glm::vec3 const & GlobalPosition();
+
+		[[nodiscard]]
+		Rotation const & GlobalRotation();
+
+		[[nodiscard]]
+		bool IsDirty() const;
 
 	protected:
 
@@ -42,33 +64,24 @@ namespace MFA
 
 		void SetViewDirty();
 
-		virtual void CalculateViewMat();
-
-		void CalculateProjMat();
-
 		MFA_VARIABLE2(fovDeg, float, 40.0f, SetProjectionDirty, _)
 
-		MFA_VARIABLE3(rotation, Rotation, Rotation { glm::vec3(0.0f, 180.0f, 180.0f) }, SetViewDirty, _);
-		
-		MFA_VARIABLE3(position, glm::vec3, {}, SetViewDirty, _);
-		
 		MFA_VARIABLE2(farPlane, float, 1000.0f, SetProjectionDirty, _)
 
 		MFA_VARIABLE2(nearPlane, float, 0.01f, SetProjectionDirty, _)
 
-		bool _isProjectionDirty = true;
-
-		bool _isViewDirty = true;
-
+		Transform _transform{};
+		
 		glm::mat4 _viewMat{};
 		glm::mat4 _projMat{};
 		glm::mat4 _viewProjMat{};
 
-		glm::vec3 _forward{};
-		glm::vec3 _right{};
-		glm::vec3 _up{};
+		bool _isProjectionDirty = true;
+		bool _isViewDirty = true;
+		bool _isViewProjectionDirty = true;
 
 		int _resizeListener = -1;
 
 	};
+
 }

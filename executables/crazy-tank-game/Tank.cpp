@@ -106,9 +106,9 @@ std::unique_ptr<Bullet> Tank::Shoot(std::shared_ptr<Bullet::Params> params)
 	}
 
 	auto bullet = std::make_unique<Bullet>(std::move(params), _physicsId);
-	bullet->Transform().SetLocalRotation(_transform->GlobalRotation());
+	bullet->Transform().SetLocalRotation(_shootTransform->GlobalRotation());
 	bullet->Transform().SetLocalScale(glm::one<glm::vec3>() * 0.25f);
-	bullet->Transform().SetLocalPosition(_transform->GlobalPosition());
+	bullet->Transform().SetLocalPosition(_shootTransform->GlobalPosition() - _shootTransform->Forward() * 1.0f);
 	_shootCooldownEndTime = Time::NowSec() + _params->shootCooldown;
 
 	return bullet;

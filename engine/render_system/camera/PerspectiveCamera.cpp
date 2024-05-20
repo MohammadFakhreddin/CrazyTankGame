@@ -27,51 +27,136 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::mat4 const & PerspectiveCamera::GetViewProjection()
+	glm::mat4 const & PerspectiveCamera::ViewProjection()
 	{
-		if (_isViewDirty)
+		if (_isViewProjectionDirty == true)
 		{
-			CalculateViewMat();
+			_viewProjMat = Projection() * View();
+			_isViewProjectionDirty = false;
 		}
-		
-		if (_isProjectionDirty)
-		{
-			CalculateProjMat();
-		}
-		
-		if (_isViewDirty == true || _isProjectionDirty == true)
-		{
-			_viewProjMat = _projMat * _viewMat;
-		}
-
-		_isProjectionDirty = false;
-		_isViewDirty = false;
-
 		return _viewProjMat;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::mat4 const & PerspectiveCamera::GetView()
+	glm::mat4 const & PerspectiveCamera::View()
 	{
 		if (_isViewDirty == true)
 		{
-			CalculateViewMat();
+			auto const invTran = glm::translate(glm::identity<glm::mat4>(), -_transform.GetLocalPosition());
+			auto const invRot = glm::transpose(_transform.GetLocalRotation().GetMatrix());
+			_viewMat = invRot * invTran;
+			_isViewDirty = false;
 		}
-		_isViewDirty = false;
 		return _viewMat;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::mat4 const & PerspectiveCamera::GetProjection()
+	glm::mat4 const & PerspectiveCamera::Projection()
 	{
 		if (_isProjectionDirty == true)
 		{
-			CalculateProjMat();
+			auto const extent = LogicalDevice::Instance->GetSurfaceCapabilities().currentExtent;
+			float const aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+
+			Math::PerspectiveProjection(_projMat, aspectRatio, _fovDeg, _nearPlane, _farPlane);
+			_isProjectionDirty = false;
 		}
-		_isProjectionDirty = false;
 		return _projMat;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void PerspectiveCamera::SetLocalPosition(glm::vec3 const& localPosition)
+	{
+		bool const changed = _transform.SetLocalPosition(localPosition);
+		if (changed)
+		{
+			SetViewDirty();
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void PerspectiveCamera::SetLocalRotation(Rotation const& localRotation)
+	{
+		bool const changed = _transform.SetLocalRotation(localRotation);
+		if(changed)
+		{
+			SetViewDirty();
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void PerspectiveCamera::SetEulerAngles(glm::vec3 const& eulerAngles)
+	{
+		bool const changed = _transform.SetEulerAngles(eulerAngles);
+		if(changed)
+		{
+			SetViewDirty();
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void PerspectiveCamera::SetLocalQuaternion(glm::quat const& quaternion)
+	{
+		bool const changed = _transform.SetLocalQuaternion(quaternion);
+		if(changed)
+		{
+			SetViewDirty();
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 const& PerspectiveCamera::LocalPosition()
+	{
+		return _transform.GetLocalPosition();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	Rotation const& PerspectiveCamera::LocalRotation()
+	{
+		return _transform.GetLocalRotation();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 const& PerspectiveCamera::Forward()
+	{
+		return _transform.Forward();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 const& PerspectiveCamera::Right()
+	{
+		return _transform.Right();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 const& PerspectiveCamera::Up()
+	{
+		return _transform.Up();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	glm::vec3 const& PerspectiveCamera::GlobalPosition()
+	{
+		return _transform.GlobalPosition();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	Rotation const& PerspectiveCamera::GlobalRotation()
+	{
+		return _transform.GlobalRotation();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -79,6 +164,7 @@ namespace MFA
 	void PerspectiveCamera::SetProjectionDirty()
 	{
 		_isProjectionDirty = true;
+		_isViewProjectionDirty = true;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -86,30 +172,7 @@ namespace MFA
 	void PerspectiveCamera::SetViewDirty()
 	{
 		_isViewDirty = true;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	void PerspectiveCamera::CalculateViewMat()
-	{
-		auto const rotationT = glm::transpose(_rotation.GetMatrix());
-		_forward = glm::normalize(rotationT * Math::ForwardVec4W0);
-		_right = glm::normalize(rotationT * Math::RightVec4W0);
-		_up = glm::normalize(rotationT * Math::UpVec4W0);
-
-		auto const translation = glm::translate(glm::identity<glm::mat4>(), _position);
-		auto const viewMat4 = _rotation.GetMatrix() * translation;
-		_viewMat = viewMat4;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	void PerspectiveCamera::CalculateProjMat()
-	{
-		auto const extent = LogicalDevice::Instance->GetSurfaceCapabilities().currentExtent;
-		float const aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-
-		Math::PerspectiveProjection(_projMat, aspectRatio, _fovDeg, _nearPlane, _farPlane);
+		_isViewProjectionDirty = true;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -121,27 +184,6 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::vec3 const & PerspectiveCamera::GetForward() const
-	{
-		return _forward;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	glm::vec3 const & PerspectiveCamera::GetRight() const
-	{
-		return _right;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
-	glm::vec3 const & PerspectiveCamera::GetUp() const
-	{
-		return _up;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-
 	void PerspectiveCamera::Debug_UI()
 	{
 		if (ImGui::InputFloat("Fov degree", &_fovDeg))
@@ -149,20 +191,6 @@ namespace MFA
 			SetProjectionDirty();
 		}
 		
-		{
-			glm::vec3 eulerAngles = _rotation.GetEulerAngles();
-			if (ImGui::InputFloat3("Euler angles", reinterpret_cast<float *>(&eulerAngles)))
-			{
-				_rotation.SetEulerAngles(eulerAngles);
-				SetProjectionDirty();
-			}
-		}
-
-		if (ImGui::InputFloat3("Position", reinterpret_cast<float *>(&_position)))
-		{
-			SetViewDirty();
-		}
-
 		if (ImGui::InputFloat("Far plane", &_farPlane))
 		{
 			SetProjectionDirty();
@@ -172,6 +200,8 @@ namespace MFA
 		{
 			SetProjectionDirty();
 		}
+
+		_transform.DebugUI();
 	}
 	
 	//-------------------------------------------------------------------------------------------------

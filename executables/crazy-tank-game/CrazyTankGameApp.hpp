@@ -15,6 +15,7 @@
 #include "LogicalDevice.hpp"
 #include "Tank.hpp"
 #include "Time.hpp"
+#include "FollowCamera.hpp"
 
 #include <memory>
 #include <thread>
@@ -40,13 +41,11 @@ private:
 
     void Render(MFA::RT::CommandRecordState& recordState);
 
-    void OnUI(float deltaTimeSec);
+    void DebugUI(float deltaTimeSec);
 
     void OnSDL_Event(SDL_Event* event);
 
     void OnResize();
-
-    void PrepareCamera();
 
     void PrepareInGameText();
 
@@ -64,7 +63,8 @@ private:
 	std::shared_ptr<MFA::DisplayRenderPass> displayRenderPass{};
 
     // TODO: We can have a fixed camera and a debug camera
-    std::unique_ptr<MFA::PerspectiveCamera> camera{};
+    std::unique_ptr<FollowCamera> gameCamera{};
+    std::unique_ptr<MFA::PerspectiveCamera> debugCamera{};
 	std::shared_ptr<MFA::RT::BufferGroup> cameraBuffer{};
 	std::shared_ptr<CameraBufferTracker> cameraBufferTracker{};
 
@@ -84,13 +84,12 @@ private:
     bool inputA{};
     bool inputB{};
 
-    //std::unique_ptr<GameInstance> game;
-
     std::unique_ptr<Physics2D> physics2D{};
 
     bool renderPhysics = false;
     bool renderMap = true;
     bool renderPlayer = true;
+    bool useDebugCamera = false;
 
     std::unique_ptr<Map> map{};
     std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
@@ -104,8 +103,8 @@ private:
 
     float passedTime = 0.0f;
 
-    std::unique_ptr<MFA::ConsolasFontRenderer> _fontRenderer{};
-    std::shared_ptr<MFA::RT::SamplerGroup> _fontSampler{};
-    std::unique_ptr<MFA::ConsolasFontRenderer::TextData> _textData{};
+    std::unique_ptr<MFA::ConsolasFontRenderer> fontRenderer{};
+    std::shared_ptr<MFA::RT::SamplerGroup> fontSampler{};
+    std::unique_ptr<MFA::ConsolasFontRenderer::TextData> textData{};
 
 };

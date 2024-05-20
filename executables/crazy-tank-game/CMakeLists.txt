@@ -16,6 +16,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/Tank.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Bullet.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/Bullet.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/FollowCamera.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/FollowCamera.cpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

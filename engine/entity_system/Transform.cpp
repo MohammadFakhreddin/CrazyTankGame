@@ -1,6 +1,7 @@
 #include "Transform.hpp"
 
 #include "BedrockMath.hpp"
+#include "imgui.h"
 
 namespace MFA
 {
@@ -11,24 +12,28 @@ namespace MFA
 	
 	//-------------------------------------------------------------------------------------------------
 
-	void Transform::SetEulerAngles(glm::vec3 const & eulerAngles)
+	bool Transform::SetEulerAngles(glm::vec3 const & eulerAngles)
 	{
 		mIsLocalTransformDirty |= mLocalRotation.SetEulerAngles(eulerAngles);
 		if (mIsLocalTransformDirty == true)
 		{
 			SetGlobalTransformDirty();
+			return true;
 		}
+		return false;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 
-	void Transform::SetLocalQuaternion(glm::quat const & quaternion)
+	bool Transform::SetLocalQuaternion(glm::quat const & quaternion)
 	{
 		mIsLocalTransformDirty |= mLocalRotation.SetQuaternion(quaternion);
 		if (mIsLocalTransformDirty == true)
 		{
 			SetGlobalTransformDirty();
+			return true;
 		}
+		return false;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -123,7 +128,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::vec3 Transform::Forward()
+	glm::vec3 const & Transform::Forward()
 	{
 		if (mForwardDirty == true)
 		{
@@ -135,7 +140,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::vec3 Transform::Right()
+	glm::vec3 const & Transform::Right()
 	{
 		if (mRightDirty == true)
 		{
@@ -147,7 +152,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::vec3 Transform::Up()
+	glm::vec3 const & Transform::Up()
 	{
 		if (mUpDirty == true)
 		{
@@ -159,7 +164,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	glm::vec3 & Transform::GlobalPosition()
+	glm::vec3 const & Transform::GlobalPosition()
 	{
 		if (mGlobalPositionDirty == true)
 		{
@@ -171,7 +176,7 @@ namespace MFA
 
 	//-------------------------------------------------------------------------------------------------
 
-	Rotation & Transform::GlobalRotation()
+	Rotation const & Transform::GlobalRotation()
 	{
 		if (mGlobalRotationDirty == true)
 		{
@@ -179,6 +184,37 @@ namespace MFA
 			mGlobalRotationDirty = false;
 		}
 		return mGlobalRotation;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+
+	void Transform::DebugUI()
+	{
+		bool isDirty = false;
+
+		if(ImGui::InputFloat3("Position",reinterpret_cast<float *>(&mLocalPosition)))
+		{
+			isDirty = true;
+		}
+
+		{
+			glm::vec3 eulerAngles = mLocalRotation.GetEulerAngles();
+			if(ImGui::InputFloat3("Euler angles",reinterpret_cast<float *>(&eulerAngles)))
+			{
+				mLocalRotation.SetEulerAngles(eulerAngles);
+				isDirty = true;
+			}
+		}
+
+		if (ImGui::InputFloat3("Scale", reinterpret_cast<float *>(&mLocalScale)))
+		{
+			isDirty = true;
+		}
+
+		if (isDirty == true)
+		{
+			SetLocalTransformDirty();
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
