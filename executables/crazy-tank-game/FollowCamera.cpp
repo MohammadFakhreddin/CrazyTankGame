@@ -10,6 +10,15 @@ using namespace MFA;
 //---------------------------------------------------------------------
 
 FollowCamera::FollowCamera(
+    MFA::Transform & target, 
+    std::shared_ptr<MFA::HostVisibleBufferTracker> cameraBufferTracker
+)
+    : FollowCamera(target, cameraBufferTracker, Params{})
+{}
+
+//---------------------------------------------------------------------
+
+FollowCamera::FollowCamera(
     Transform & target,
     std::shared_ptr<HostVisibleBufferTracker> cameraBufferTracker,
     Params params

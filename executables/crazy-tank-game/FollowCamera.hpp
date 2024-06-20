@@ -22,8 +22,13 @@ public:
 
     explicit FollowCamera(
         MFA::Transform & target, 
+        std::shared_ptr<MFA::HostVisibleBufferTracker> cameraBufferTracker
+    );
+
+    explicit FollowCamera(
+        MFA::Transform & target, 
         std::shared_ptr<MFA::HostVisibleBufferTracker> cameraBufferTracker,
-        Params params = {}
+        Params params
     );
 
     ~FollowCamera();

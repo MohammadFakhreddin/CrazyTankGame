@@ -105,6 +105,9 @@ include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2/include")
 
 set(BUILD_SHARED_LIBS OFF)
 set(SDL2MIXER_WAVPACK OFF)
+set(SDL2MIXER_OPUS OFF)
+set(SDL2MIXER_MOD OFF)
+set(SDL2MIXER_MIDI OFF)
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2_mixer")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2_mixer/include")
 

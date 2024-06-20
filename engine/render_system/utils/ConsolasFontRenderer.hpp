@@ -5,6 +5,8 @@
 
 #include "stb_font_consolas_24_latin1.h"
 
+#include <optional>
+
 namespace MFA
 {
 
