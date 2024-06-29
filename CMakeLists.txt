@@ -56,13 +56,11 @@ endif()
 
 ### OpenMP #############################################
 
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    link_libraries(OpenMP::OpenMP_CXX)
-endif()
+find_package(OpenMP REQUIRED)
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+link_libraries(OpenMP::OpenMP_CXX)
 
 ### Imgui ###############################################
 
@@ -98,6 +96,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/tiny_gltf
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2/include")
+include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2_mixer/include")
 
 ### Linking libraries ####################################
 
