@@ -1,5 +1,7 @@
 #include "AABB2D.hpp"
 
+#include <algorithm>
+
 //-----------------------------------------------------------------------
 
 bool AABB2D::Overlap(AABB2D const& other) const
