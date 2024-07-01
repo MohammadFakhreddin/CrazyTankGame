@@ -345,6 +345,12 @@ namespace MFA::RenderBackend
 
         // Filtering instance extensions
         auto supportedExtensions = FilterSupportedInstanceExtensions(instanceExtensions);
+#ifdef __PLATFORM_MAC__
+        supportedExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        uint32_t flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#else
+        uint32_t flags = 0;
+#endif
 
         std::vector<char const *> enabledLayer {};
 #if defined(MFA_DEBUG)
@@ -353,7 +359,6 @@ namespace MFA::RenderBackend
 
         auto supportedLayers = FilterSupportedLayers(enabledLayer);
 
-        uint32_t flags = 0;
 
         // Filling out instance description:
         auto const instanceInfo = VkInstanceCreateInfo{
