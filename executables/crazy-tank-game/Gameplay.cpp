@@ -67,7 +67,7 @@ MFA::Transform BulletEntity::GetTransform(glm::vec3 pos, float bAngl, float scl)
 }
 
 std::list<GameInstance::TankAI>::iterator GameInstance::AddTankEnemy(const glm::vec2& pos) {
-	simple_tank_enemies.emplace_back(TankEntity{ *_eTankRenderer, pos }, std::vector<glm::vec2>{});
+	simple_tank_enemies.emplace_back(TankAI{{ *_eTankRenderer, pos }, std::vector<glm::vec2>{} });
 	auto ret = std::prev(simple_tank_enemies.end());
 	ret->entity.physicsId = Physics2D::Instance->Register(
 		Physics2D::Type::AABB,
@@ -160,8 +160,8 @@ void GameInstance::Update(float delta, const glm::vec2& joystickInp, bool inputA
 		glm::vec3 displacement = b_it->BaseDir() * TEST_BULLET_SPEED * delta;
 		Physics2D::HitInfo hit_info{};
 		bool hit = Physics2D::Instance->Raycast(
-			Layer::WallLayer | Layer::TankLayer, 
-			b_it->physicsId, 
+			Layer::WallLayer | Layer::TankLayer,
+			b_it->physicsId,
 			Physics2D::Ray{ glm::vec2{ b_it->position.x, b_it->position.z }, glm::vec2{ b_it->BaseDir().x, b_it->BaseDir().z } },
 			TEST_BULLET_SPEED* delta,
 			hit_info);
