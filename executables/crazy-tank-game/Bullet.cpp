@@ -19,6 +19,7 @@ Bullet::Bullet(std::shared_ptr<Params> params, Physics2D::EntityID const ownerId
 		[this](auto layer)->void {OnHit(layer);}
 	);
 	_noFriendlyFireRemainingTime = _params->friendlyFireDelay;
+	_lifeTime = _params->lifeTime;
 }
 
 //=============================================================================
@@ -34,6 +35,13 @@ void Bullet::Update(float deltaTimeSec)
 {
 	if (_isAlive == false)
 	{
+		return;
+	}
+
+	_lifeTime -= deltaTimeSec;
+	if (_lifeTime < 0.0f)
+	{
+		_isAlive = false;
 		return;
 	}
 
@@ -53,60 +61,70 @@ void Bullet::Update(float deltaTimeSec)
 		excludeIds.emplace(_ownerId);
 	}
 
-	// TODO: This is dangerous and can lead to infinite loop
-    do
-    {
-		Physics2D::HitInfo hitInfo {};
-		auto const isHit = Physics2D::Instance->Raycast(
-			Layer::Wall | Layer::Tank | Layer::Bullet,
-			excludeIds,
-			Physics2D::Ray {currPos.xz(), moveDir.xz()},
-			moveMag,
-			hitInfo
-		);
-
-		hitWall = false;
-		if (isHit == true)
+	{// TODO: This sometimes fails
+		int itrCount = 0;
+		// TODO: This is dangerous and can lead to infinite loop
+		do
 		{
-			if (hitInfo.layer == Layer::Wall)
+			Physics2D::HitInfo hitInfo {};
+			auto const isHit = Physics2D::Instance->Raycast(
+				Layer::Wall | Layer::Tank | Layer::Bullet,
+				excludeIds,
+				Physics2D::Ray {currPos.xz(), moveDir.xz()},
+				moveMag,
+				hitInfo
+			);
+
+			hitWall = false;
+			if (isHit == true)
 			{
-				auto const epsilon = 1e-5f;
-
-				auto time = glm::max(hitInfo.hitTime - epsilon, 0.0f);
-
-				currPos.x = hitInfo.hitPoint.x;
-				currPos.z = hitInfo.hitPoint.y;
-				currPos -= epsilon * moveDir;
-
-				moveMag = (1.0f - time) * moveMag;
-				auto const wallNormal = glm::vec3 {hitInfo.hitNormal.x, 0.0f, hitInfo.hitNormal.y};
-				moveDir = glm::normalize(glm::reflect(moveDir, wallNormal));
-				newPos = currPos + (moveDir * moveMag);
-				hitWall = true;
-			}
-			else if (hitInfo.layer == Layer::Tank)
-			{
-				if (hitInfo.onHit != nullptr)
+				if (hitInfo.layer == Layer::Wall)
 				{
-					hitInfo.onHit(Layer::Bullet);
+					auto const epsilon = 1e-5f;
+
+					auto time = glm::max(hitInfo.hitTime - epsilon, 0.0f);
+
+					currPos.x = hitInfo.hitPoint.x;
+					currPos.z = hitInfo.hitPoint.y;
+					currPos -= epsilon * moveDir;
+
+					moveMag = (1.0f - time) * moveMag;
+					auto const wallNormal = glm::vec3 {hitInfo.hitNormal.x, 0.0f, hitInfo.hitNormal.y};
+					moveDir = glm::normalize(glm::reflect(moveDir, wallNormal));
+					newPos = currPos + (moveDir * moveMag);
+					hitWall = true;
 				}
-				OnHit(Layer::Tank);
-			}
-			else if (hitInfo.layer == Layer::Bullet)
-			{
-				if (hitInfo.onHit != nullptr)
+				else if (hitInfo.layer == Layer::Tank)
 				{
-					hitInfo.onHit(Layer::Bullet);
+					if (hitInfo.onHit != nullptr)
+					{
+						hitInfo.onHit(Layer::Bullet);
+					}
+					OnHit(Layer::Tank);
 				}
-				OnHit(Layer::Bullet);
+				else if (hitInfo.layer == Layer::Bullet)
+				{
+					if (hitInfo.onHit != nullptr)
+					{
+						hitInfo.onHit(Layer::Bullet);
+					}
+					OnHit(Layer::Bullet);
+				}
+				else
+				{
+					MFA_ASSERT(false);
+				}
 			}
-			else
+
+			++itrCount;
+
+			if (itrCount > 100)
 			{
-				MFA_ASSERT(false);
+				break;
 			}
 		}
-    }
-	while (hitWall == true);
+		while (hitWall == true);
+	}
 
     _transform.SetLocalQuaternion(glm::quatLookAt(moveDir,Math::UpVec3));
     Physics2D::Instance->MoveSphere(

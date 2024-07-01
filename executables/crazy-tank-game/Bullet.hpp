@@ -15,6 +15,7 @@ public:
 		float moveSpeed = 20.0f;			// Bullet move speed
 		float radius = 0.25f;				// Bullet radius
 		float friendlyFireDelay = 0.5f;		// Bullet won't hit the owner before this duration 
+		float lifeTime = 10.0f;
 	};
 
 	explicit Bullet(
@@ -46,5 +47,7 @@ private:
 	Physics2D::EntityID _physicsId{};
 
 	bool _isAlive = true;
+
+	float _lifeTime = 0.0f;
 
 };

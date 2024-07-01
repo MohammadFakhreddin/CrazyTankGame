@@ -16,6 +16,7 @@
 #include "Tank.hpp"
 #include "Time.hpp"
 #include "FollowCamera.hpp"
+#include "camera/ArcballCamera.hpp"
 
 #include <memory>
 #include <thread>
@@ -64,7 +65,7 @@ private:
 
     // TODO: We can have a fixed camera and a debug camera
     std::unique_ptr<FollowCamera> gameCamera{};
-    std::unique_ptr<MFA::PerspectiveCamera> debugCamera{};
+    std::unique_ptr<MFA::ArcballCamera> debugCamera{};
 	std::shared_ptr<MFA::RT::BufferGroup> cameraBuffer{};
 	std::shared_ptr<CameraBufferTracker> cameraBufferTracker{};
 

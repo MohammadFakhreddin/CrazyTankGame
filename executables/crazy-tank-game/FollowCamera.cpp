@@ -61,6 +61,14 @@ void FollowCamera::DebugUI()
 
 //---------------------------------------------------------------------
 
+void FollowCamera::NotifyEnabled()
+{
+    UpdatePosition(0.0f, true);
+    _cameraBufferTracker->SetData(MFA::Alias{_observerCamera->ViewProjection()});
+}
+
+//---------------------------------------------------------------------
+
 void FollowCamera::UpdatePosition(float const deltaTimeSec, bool const resetPosition)
 {
     // TODO: It needs to move like a spring

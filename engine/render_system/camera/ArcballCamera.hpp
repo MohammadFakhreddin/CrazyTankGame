@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PerspectiveCamera.hpp"
+#include "BedrockMath.hpp"
 
 #include <SDL2/SDL_events.h>
 
@@ -10,7 +11,7 @@ namespace MFA
     {
     public:
 
-        explicit ArcballCamera(glm::vec3 target = {});
+        explicit ArcballCamera(glm::vec3 target = {}, glm::vec3 up = Math::UpVec3);
 
         ~ArcballCamera();
 
@@ -37,6 +38,6 @@ namespace MFA
         bool _leftMouseDown = false;
         
         glm::vec3 _target{};
-    
+        glm::vec3 _up{};
     };
 }

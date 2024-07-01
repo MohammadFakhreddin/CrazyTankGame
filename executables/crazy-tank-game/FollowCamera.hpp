@@ -37,6 +37,8 @@ public:
 
     void DebugUI();
 
+    void NotifyEnabled();
+
 private:
 
     void UpdatePosition(float deltaTime, bool resetPosition = false);

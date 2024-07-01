@@ -1,7 +1,5 @@
 #include "CrazyTankGameApp.hpp"
 
-#include "camera/ObserverCamera.hpp"
-#include "camera/ArcballCamera.hpp"
 #include "ImportTexture.hpp"
 #include "BedrockMath.hpp"
 #include "Layers.hpp"
@@ -174,19 +172,11 @@ CrazyTankGameApp::CrazyTankGameApp()
 	gameCamera = std::make_unique<FollowCamera>(playerTank->Transform(),cameraBufferTracker);
 
 	{// Debug camera
-		/*auto observerCamera = std::make_unique<ObserverCamera>();
-		observerCamera->SetfovDeg(40.0f);
-		observerCamera->SetLocalRotation(Rotation(glm::vec3{-90.0f, 0.0f, 0.0f}));
-		observerCamera->SetLocalPosition(glm::vec3{0.0f, +90.0f, 0.0f});
-		observerCamera->SetfarPlane(100.0f);
-		observerCamera->SetnearPlane(0.010f);*/
-		auto arcBallCamera = std::make_unique<ArcballCamera>(playerTank->Transform().GlobalPosition());
-		arcBallCamera->SetfovDeg(40.0f);
-		arcBallCamera->SetLocalRotation(Rotation(glm::vec3{-90.0f, 0.0f, 0.0f}));
-		arcBallCamera->SetLocalPosition(glm::vec3{0.0f, +90.0f, 0.0f});
-		arcBallCamera->SetfarPlane(100.0f);
-		arcBallCamera->SetnearPlane(0.010f);
-		debugCamera = std::move(arcBallCamera);
+		debugCamera = std::make_unique<MFA::ArcballCamera>(glm::vec3{}, -Math::ForwardVec3);
+		debugCamera->SetfovDeg(40.0f);
+		debugCamera->SetLocalPosition(glm::vec3{0.0f, 90.0f, 0.0f});
+		debugCamera->SetfarPlane(1000.0f);
+		debugCamera->SetnearPlane(0.010f);
 	}
 
 	// TODO: We need a spawn position for the enemies
@@ -395,6 +385,7 @@ void CrazyTankGameApp::DebugUI(float deltaTimeSec)
 		ImGui::InputFloat("Move speed", &bulletParams->moveSpeed);
 		ImGui::InputFloat("Radius", &bulletParams->radius);
 		ImGui::InputFloat("Friendly fire delay", &bulletParams->friendlyFireDelay);
+		ImGui::InputFloat("Life time", &bulletParams->lifeTime);
 		ImGui::TreePop();
 	}
 	if (ImGui::Checkbox("Use debug camera", &useDebugCamera))
@@ -402,6 +393,10 @@ void CrazyTankGameApp::DebugUI(float deltaTimeSec)
 		if (useDebugCamera == true)
 		{
 			cameraBufferTracker->SetData(Alias{debugCamera->ViewProjection()});
+		}
+		else
+		{
+			gameCamera->NotifyEnabled();
 		}
 	}
 	if (ImGui::TreeNode("Debug camera params"))

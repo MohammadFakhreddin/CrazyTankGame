@@ -3,16 +3,16 @@
 #include "LogicalDevice.hpp"
 #include "UI.hpp"
 #include "BedrockLog.hpp"
-#include "BedrockMath.hpp"
 
 namespace MFA
 {
 
 	//-------------------------------------------------------------------------------------------------
 
-	ArcballCamera::ArcballCamera(glm::vec3 target)
+	ArcballCamera::ArcballCamera(glm::vec3 target, glm::vec3 up)
 	{
 		_target = std::move(target);
+		_up = std::move(up);
 		LogicalDevice::Instance->SDL_EventSignal.Register([&](SDL_Event* event)->void{OnSDL_Event(event);});
 	}
 
@@ -39,7 +39,7 @@ namespace MFA
 			float const eulerX = rotDt * _mouseRelX;
 			float const eulerY = -rotDt * _mouseRelY;
 
-			auto const biTan = glm::normalize(glm::cross(forward, Math::UpVec3));
+			auto const biTan = glm::normalize(glm::cross(forward, _up));
 
 			auto const up = glm::normalize(glm::cross(forward, biTan));
 
@@ -48,16 +48,22 @@ namespace MFA
 
 			auto const newPosition = (rotX * rotY * camVec) + _target;
 
-			auto newForward = glm::normalize(newPosition - _target);
+			auto vector = newPosition - _target;
+			auto magnitude = glm::length(vector);
 
-			if (std::abs(glm::dot(newForward, Math::UpVec3)) < 0.99f)
+			if (magnitude > glm::epsilon<float>())
 			{
-				SetLocalPosition(newPosition);
-				forward = newForward;
+				auto newForward = vector / magnitude;
+
+				if (std::abs(glm::dot(newForward, _up)) < 0.99f)
+				{
+					SetLocalPosition(newPosition);
+					forward = newForward;
+				}
 			}
 		}
 
-		SetLocalQuaternion(glm::quatLookAt(forward, Math::UpVec3));
+		SetLocalQuaternion(glm::quatLookAt(forward, _up));
 		
 	}
 
@@ -137,7 +143,11 @@ namespace MFA
 				{
 					position += deltaVec;
 					SetLocalPosition(position);
-					SetLocalQuaternion(glm::quatLookAt(-camDir, Math::UpVec3));
+
+					auto const camVec = _transform.GetLocalPosition() - _target;
+					auto forward = glm::normalize(camVec);
+
+					SetLocalQuaternion(glm::quatLookAt(-camDir, _up));
 					_isViewDirty = true;
 				}
 			}
