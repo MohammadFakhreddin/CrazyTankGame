@@ -26,16 +26,16 @@ namespace MFA
             float deltaTimeInSec
         );
 
-        inline static UI* Instance = nullptr;
-
-        Signal<> UpdateSignal{};
-
         [[nodiscard]]
         bool HasFocus() const;
 
         void BeginWindow(std::string const& windowName);
 
         void EndWindow();
+
+        inline static UI* Instance = nullptr;
+
+        Signal<> UpdateSignal{};
 
 	private:
 
