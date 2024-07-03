@@ -465,6 +465,10 @@ void CrazyTankGameApp::OnSDL_Event(SDL_Event* event)
 			{
 				inputB = modifier > 0;
 			}
+                        else if (event->key.keysym.sym == SDLK_F5) {
+                            shadingPipeline->reload();
+                        }
+
 		}
 	}
 

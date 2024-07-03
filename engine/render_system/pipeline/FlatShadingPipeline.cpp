@@ -350,6 +350,14 @@ namespace MFA
 		}
 	}
 
-	//-------------------------------------------------------------------------------------------------
+        void FlatShadingPipeline::reload()
+        {
+            MFA_LOG_DEBUG("Reloading shading pipeline");
+
+            LogicalDevice::Instance->DeviceWaitIdle();
+            CreatePipeline();
+        }
+
+        //-------------------------------------------------------------------------------------------------
 
 }

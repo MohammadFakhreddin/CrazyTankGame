@@ -1,13 +1,14 @@
 #pragma once
 
+#include "IShadingPipeline.h"
 #include "render_pass/DisplayRenderPass.hpp"
 
-#include <memory>
 #include <glm/glm.hpp>
+#include <memory>
 
 namespace MFA
 {
-    class FlatShadingPipeline
+    class FlatShadingPipeline : public IShadingPipeline
     {
     public:
 
@@ -71,6 +72,8 @@ namespace MFA
             RT::BufferAndMemory const& material,
             RT::GpuTexture const& texture
         ) const;
+
+        void reload() override;
 
     private:
 
