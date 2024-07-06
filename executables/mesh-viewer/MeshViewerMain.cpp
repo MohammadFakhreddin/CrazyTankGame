@@ -31,6 +31,11 @@ void UI_Loop()
 
 	ui->BeginWindow("Settings");
 	ImGui::Checkbox("Display wireframe", &displayWireframe);
+
+        ImGui::Spacing();
+        ImGui::Text("Background Color:");
+        auto flags = ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoLabel;
+        ImGui::ColorPicker4("MyColor##4", (float*)&ui->backgroundColor, flags, nullptr);
 	ui->EndWindow();
 };
 
@@ -232,7 +237,7 @@ int main()
 
 				cameraBufferTracker->Update(recordState);
 
-				displayRenderPass->Begin(recordState);
+				displayRenderPass->Begin(recordState, ui->backgroundColor);
 
 				if (displayWireframe == true)
 				{

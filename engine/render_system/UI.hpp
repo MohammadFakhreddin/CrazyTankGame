@@ -37,6 +37,8 @@ namespace MFA
 
         void EndWindow();
 
+        std::array<float, 4> backgroundColor = std::array<float, 4>{114.0f / 255.0f, 144.0f / 255.0f, 154.0f / 255.0f, 200.0f / 255.0f};
+
 	private:
 
         struct PushConstants
@@ -78,5 +80,5 @@ namespace MFA
         int _eventWatchId = -1;
         SignalId _resizeSignalId = SignalIdInvalid;
 	};
-    
+
 }
