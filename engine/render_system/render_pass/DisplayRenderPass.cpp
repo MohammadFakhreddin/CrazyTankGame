@@ -40,7 +40,7 @@ namespace MFA
 
     //-------------------------------------------------------------------------------------------------
 
-    void DisplayRenderPass::Begin(RT::CommandRecordState & recordState)
+    void DisplayRenderPass::Begin(RT::CommandRecordState & recordState, std::optional<std::array<float, 4>> backgroundColor)
     {
         ClearDepthBufferIfNeeded(recordState);
 
@@ -58,8 +58,15 @@ namespace MFA
 
         std::vector<VkClearValue> clearValues{};
         clearValues.resize(3);
-        clearValues[0].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.1f, 1.0f } };
-        clearValues[1].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.1f, 1.0f } };
+        if (backgroundColor.has_value())
+        {
+            clearValues[0].color = VkClearColorValue{ .float32 = {backgroundColor->at(0), backgroundColor->at(1), backgroundColor->at(2), backgroundColor->at(3) } };
+            clearValues[1].color = clearValues[0].color;
+        } else
+        {
+            clearValues[0].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.1f, 1.0f } };
+            clearValues[1].color = VkClearColorValue{ .float32 = {0.1f, 0.1f, 0.1f, 1.0f } };
+        }
         clearValues[2].depthStencil = { .depth = 1.0f, .stencil = 0 };
 
         RB::BeginRenderPass(

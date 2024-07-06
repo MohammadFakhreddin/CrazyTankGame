@@ -29,7 +29,7 @@ namespace MFA
         [[nodiscard]]
         VkRenderPass GetVkRenderPass() override;
         
-        void Begin(RT::CommandRecordState & recordState);
+        void Begin(RT::CommandRecordState & recordState, std::optional<std::array<float, 4>> backgroundColor = {});
 
         void End(RT::CommandRecordState & recordState);
         
