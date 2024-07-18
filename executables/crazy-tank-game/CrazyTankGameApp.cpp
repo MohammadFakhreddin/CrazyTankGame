@@ -139,6 +139,8 @@ CrazyTankGameApp::CrazyTankGameApp()
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
+	int rows = 20;
+	int columns = 20;
 
 	map = std::make_unique<Map>(40, 40, 20, 20, walls, shadingPipeline, errorTexture);
 
@@ -177,6 +179,81 @@ CrazyTankGameApp::CrazyTankGameApp()
 		debugCamera->SetLocalPosition(glm::vec3{0.0f, 90.0f, 0.0f});
 		debugCamera->SetfarPlane(1000.0f);
 		debugCamera->SetnearPlane(0.010f);
+	}
+
+	{
+		pathFinder = std::make_unique<PathFinder>();
+		
+		std::string idMap = "";
+		std::vector<PathFinder::NodeId> nodes{};
+		for (int j = 0; j < rows; ++j)
+        {
+	        for (int i = 0; i < columns; ++i)
+	        {
+		        if (walls[j * columns + i] == 0)
+		        {
+					nodes.emplace_back(pathFinder->AddNode(glm::vec3 {i, j, 0.0f}));
+					idMap += "=" + std::to_string(nodes.back()) + "=";
+				}
+				else
+				{
+					nodes.emplace_back(PathFinder::InvalidNode);
+					idMap += "=" + std::to_string(nodes.back()) + "=";
+				}
+			}
+			idMap += "\n";
+		}
+		MFA_LOG_INFO("Id map is\n%s", idMap.c_str());
+
+		for (int j = 0; j < rows; ++j)
+        {
+	        for (int i = 0; i < columns; ++i)
+	        {
+				auto myIdx = j * columns + i;
+				if (walls[myIdx] == 0)
+		        {
+					auto myID = nodes[myIdx]; 
+
+					auto rightIdx = (j * columns) + i + 1;
+					if (walls[rightIdx] == 0)
+					{
+						auto const addResult = pathFinder->AddEdge(myID, nodes[rightIdx]);
+						MFA_ASSERT(addResult == true);
+					}
+
+					auto forwardIdx = ((j + 1) * columns) + i;
+					if (walls[forwardIdx] == 0)
+					{
+						auto const addResult = pathFinder->AddEdge(myID, nodes[forwardIdx]);
+						MFA_ASSERT(addResult == true);
+					}
+
+					auto forwardRightIdx = ((j + 1) * columns) + i + 1;
+					if (walls[rightIdx] == 0 && walls[forwardIdx] == 0 && walls[forwardRightIdx] == 0)
+					{
+						auto const addResult = pathFinder->AddEdge(myID, nodes[forwardRightIdx]);
+						MFA_ASSERT(addResult == true);
+					}
+				}
+			}
+		}
+
+		pathFinder->CachePaths();
+		
+		auto currentNode = 0;
+		auto targetNode = 40;
+
+		MFA_LOG_INFO("Trying to find a path from %d to %d", currentNode, targetNode);
+		std::string path = std::to_string(currentNode);
+		do
+		{
+			auto const [findResult, node] = pathFinder->FindNextNode(currentNode, targetNode);
+			MFA_ASSERT(findResult == true);
+			currentNode = node;
+			path += "/" + std::to_string(currentNode);
+		}
+		while (currentNode != targetNode);
+		MFA_LOG_INFO("The path is %s", path.c_str());
 	}
 
 	// TODO: We need a spawn position for the enemies

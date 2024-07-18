@@ -17,6 +17,7 @@
 #include "Time.hpp"
 #include "FollowCamera.hpp"
 #include "camera/ArcballCamera.hpp"
+#include "PathFinder.hpp"
 
 #include <memory>
 #include <thread>
@@ -107,5 +108,7 @@ private:
     std::unique_ptr<MFA::ConsolasFontRenderer> fontRenderer{};
     std::shared_ptr<MFA::RT::SamplerGroup> fontSampler{};
     std::unique_ptr<MFA::ConsolasFontRenderer::TextData> textData{};
+
+    std::unique_ptr<PathFinder> pathFinder{};
 
 };
