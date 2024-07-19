@@ -17,6 +17,7 @@
 #include "Time.hpp"
 #include "FollowCamera.hpp"
 #include "camera/ArcballCamera.hpp"
+#include "PathFinder.hpp"
 
 #include <memory>
 #include <thread>
@@ -52,6 +53,16 @@ private:
 
     void UpdateInGameText(float deltaTimeSec);
 
+    void InitMap();
+
+    void InitPathFinder();
+
+    void UpdateBullets(float deltaTimeSec);
+
+    void UpdatePlayer(float deltaTimeSec);
+
+    void UpdateEnemies(float deltaTimeSec);
+
     // Render parameters
 	std::unique_ptr<MFA::Path> path{};
 	std::unique_ptr<MFA::LogicalDevice> device{};
@@ -80,7 +91,6 @@ private:
     std::shared_ptr<MFA::LinePipeline> linePipeline{};
     std::shared_ptr<MFA::LineRenderer> lineRenderer{};
 
-
     glm::vec2 inputAxis{};
     bool inputA{};
     bool inputB{};
@@ -93,9 +103,14 @@ private:
     bool useDebugCamera = false;
 
     std::unique_ptr<Map> map{};
-    std::unique_ptr<MFA::MeshRenderer> tankRenderer{};
+
+    std::unique_ptr<MFA::MeshRenderer> playerTankRenderer{};
     std::shared_ptr<Tank::Params> playerTankParams{};
 	std::unique_ptr<Tank> playerTank{};
+
+    std::unique_ptr<MFA::MeshRenderer> enemyTankRenderer{};
+    std::shared_ptr<Tank::Params> enemyTankParams{};
+	std::vector<std::unique_ptr<Tank>> enemyTanks{};
 
     // TODO: Some kind of memory pool is needed
     std::unique_ptr<MFA::MeshRenderer> bulletRenderer{};
@@ -107,5 +122,7 @@ private:
     std::unique_ptr<MFA::ConsolasFontRenderer> fontRenderer{};
     std::shared_ptr<MFA::RT::SamplerGroup> fontSampler{};
     std::unique_ptr<MFA::ConsolasFontRenderer::TextData> textData{};
+
+    std::unique_ptr<PathFinder> pathFinder{};
 
 };

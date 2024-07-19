@@ -9,34 +9,42 @@
 class Map
 {
 public:
-    /*struct Coord {
-        int x, y;
-    };*/
-
+    
     explicit Map(
-        float mapWidth, float mapHeight,
-        int rows, int columns, std::vector<int> const& walls,                     // For now walls are either 1 or zero
+        float mapWidth, 
+        float mapHeight,
+        int rows, 
+        int columns, 
+        std::vector<int> const& walls,                          // For now walls are either 1 or zero
         std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
         std::shared_ptr<MFA::RT::GpuTexture> errorTexture
     );
      
     void Render(MFA::RT::CommandRecordState& recordState);
 
-    //glm::vec2 CellPosition(Coord const& c) const;
-    //Coord PositionCoord(glm::vec2 const& p) const;
+    [[nodiscard]]
+    std::vector<int> const & GetWalls();
 
-    //int WallAt(Coord const& c) const;
-    //bool IsValid(Coord const& c) const;
+    [[nodiscard]]
+    int GetRows();
 
-    //std::vector<glm::vec2> AStar(Coord const& c_from, Coord const& c_to) const;
+    [[nodiscard]]
+    int GetColumns();
 
-    //Coord RandomTile(bool avoidWall = true);
+    [[nodiscard]]
+    glm::vec3 CalcPosition(int row, int column); 
 
 private:
-    int _rows, _columns;
-    std::vector<int> _walls;
+
+    int const _rows;
+    int const _columns;
+    std::vector<int> const _walls{};
+
     float _wallWidth;
     float _wallHeight;
+
+    float _startX;
+    float _startY;
 
     std::unique_ptr<MFA::MeshRenderer> _groundRenderer{};
     std::unique_ptr<MFA::MeshRenderer> _wallRenderer{};

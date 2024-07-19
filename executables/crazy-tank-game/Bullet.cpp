@@ -20,6 +20,7 @@ Bullet::Bullet(std::shared_ptr<Params> params, Physics2D::EntityID const ownerId
 	);
 	_noFriendlyFireRemainingTime = _params->friendlyFireDelay;
 	_lifeTime = _params->lifeTime;
+	_remainingBounceCount = _params->maxBounceCount;
 }
 
 //=============================================================================
@@ -62,8 +63,6 @@ void Bullet::Update(float deltaTimeSec)
 	}
 
 	{// TODO: This sometimes fails
-		int itrCount = 0;
-		// TODO: This is dangerous and can lead to infinite loop
 		do
 		{
 			Physics2D::HitInfo hitInfo {};
@@ -93,6 +92,13 @@ void Bullet::Update(float deltaTimeSec)
 					moveDir = glm::normalize(glm::reflect(moveDir, wallNormal));
 					newPos = currPos + (moveDir * moveMag);
 					hitWall = true;
+
+					_remainingBounceCount -= 1;
+					if (_remainingBounceCount <= 0)
+					{
+						_isAlive = false;
+						break;
+					}
 				}
 				else if (hitInfo.layer == Layer::Tank)
 				{
@@ -114,13 +120,6 @@ void Bullet::Update(float deltaTimeSec)
 				{
 					MFA_ASSERT(false);
 				}
-			}
-
-			++itrCount;
-
-			if (itrCount > 100)
-			{
-				break;
 			}
 		}
 		while (hitWall == true);
