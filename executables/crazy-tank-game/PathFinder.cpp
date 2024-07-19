@@ -138,6 +138,11 @@ void PathFinder::CachePaths()
 
 std::tuple<bool, PathFinder::NodeId> PathFinder::FindNextNode(NodeId startNodeID, NodeId targetNodeID)
 {
+	if (startNodeID == targetNodeID)
+	{
+		return std::tuple {true, targetNodeID};
+	}
+
 	auto const & distanceField = _distanceFields[targetNodeID];	
 	auto const myDistance = distanceField[startNodeID];
 	
@@ -150,7 +155,7 @@ std::tuple<bool, PathFinder::NodeId> PathFinder::FindNextNode(NodeId startNodeID
 	// We are the target node
 	if (myDistance < glm::epsilon<float>())
 	{
-		return std::tuple {false, targetNodeID};
+		return std::tuple {true, targetNodeID};
 	}
 
 	auto const & startNode = _nodesMap[startNodeID];

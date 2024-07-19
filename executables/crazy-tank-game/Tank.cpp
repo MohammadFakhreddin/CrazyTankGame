@@ -50,6 +50,7 @@ void Tank::OnHit(Physics2D::Layer layer)
 	if (layer == Layer::Bullet)
 	{
 		_isAlive = false;
+		Physics2D::Instance->UnRegister(_physicsId);
 	}
 }
 
@@ -126,6 +127,13 @@ MeshInstance* Tank::MeshInstance() const
 Transform & Tank::Transform()
 {
 	return *_transform;
+}
+
+//==================================================================
+
+bool Tank::IsAlive() const
+{
+	return _isAlive;
 }
 
 //==================================================================

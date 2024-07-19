@@ -3,21 +3,27 @@
 #include "BedrockPath.hpp"
 #include "Layers.hpp"
 #include "Physics2D.hpp"
+#include "BedrockAssert.hpp"
 
 #include <map>
 #include <queue>
 
+using namespace MFA;
+
 //-----------------------------------------------------------------------
 
 Map::Map(
-    float mapWidth, float mapHeight,
-    int rows, int columns, std::vector<int> const& walls,
-    std::shared_ptr<MFA::FlatShadingPipeline> pipeline,
-    std::shared_ptr<MFA::RT::GpuTexture> errorTexture
+    float mapWidth, 
+    float mapHeight,
+    int rows, 
+    int columns, 
+    std::vector<int> const& walls,
+    std::shared_ptr<FlatShadingPipeline> pipeline,
+    std::shared_ptr<RT::GpuTexture> errorTexture
 ) : _rows(rows), _columns(columns), _walls(walls)
 {
-    auto cubeCpuModel = MFA::Importer::GLTF_Model(MFA::Path::Instance->Get("models/test/cube.glb"));
-    _groundRenderer = std::make_unique<MFA::MeshRenderer>(
+    auto cubeCpuModel = Importer::GLTF_Model(Path::Instance->Get("models/test/cube.glb"));
+    _groundRenderer = std::make_unique<MeshRenderer>(
         pipeline, 
         cubeCpuModel, 
         errorTexture, 
@@ -26,13 +32,13 @@ Map::Map(
     );
     
     {
-        _groundInstance = std::make_unique<MFA::MeshInstance>(*_groundRenderer);
+        _groundInstance = std::make_unique<MeshInstance>(*_groundRenderer);
         auto& transform = _groundInstance->GetTransform();
         transform.SetLocalScale(glm::vec3{ mapWidth * 0.5f, 0.1f, mapHeight * 0.5f });
         transform.SetLocalPosition(glm::vec3{ 0.0f, -0.3f, 0.0f });
     }
 
-    _wallRenderer = std::make_unique<MFA::MeshRenderer>(
+    _wallRenderer = std::make_unique<MeshRenderer>(
         std::move(pipeline),
         cubeCpuModel,
         std::move(errorTexture),
@@ -46,19 +52,20 @@ Map::Map(
         float const halfWallWidth = _wallWidth * 0.5f;
         float const halfWallHeight = _wallHeight * 0.5f;
 
-        float startX = -mapWidth * 0.5f + halfWallWidth;
-        float startY = -mapHeight * 0.5f + halfWallHeight;
+        _startX = -mapWidth * 0.5f + halfWallWidth;
+        _startY = -mapHeight * 0.5f + halfWallHeight;
         for (int j = 0; j < rows; ++j)
         {
 	        for (int i = 0; i < columns; ++i)
 	        {
-		        if (walls[j * columns + i] > 0)
+		        if (walls[j * columns + i] == 1)
 		        {
-                    _wallInstances.emplace_back(std::make_unique<MFA::MeshInstance>(*_wallRenderer));
+                    _wallInstances.emplace_back(std::make_unique<MeshInstance>(*_wallRenderer));
                     auto & wallInstance = _wallInstances.back();
                     auto & transform = wallInstance->GetTransform();
                     transform.SetLocalScale(glm::vec3{ halfWallWidth, 0.5f, halfWallHeight });
-                    transform.SetLocalPosition(glm::vec3{ static_cast<float>(j) * _wallWidth + startX, 0.3f, static_cast<float>(i) * _wallHeight + startY });
+                    // transform.SetLocalPosition(glm::vec3{ static_cast<float>(j) * _wallWidth + startX, 0.3f, static_cast<float>(i) * _wallHeight + startY });
+                    transform.SetLocalPosition(CalcPosition(j, i));
 
                     auto colliderId = Physics2D::Instance->Register(
                         Physics2D::Type::AABB,
@@ -101,11 +108,11 @@ Map::Map(
 
 //-----------------------------------------------------------------------
 
-void Map::Render(MFA::RT::CommandRecordState& recordState)
+void Map::Render(RT::CommandRecordState& recordState)
 {
     _groundRenderer->Render(recordState, { _groundInstance.get() });
 
-    std::vector<MFA::MeshInstance*> wallInstances{};
+    std::vector<MeshInstance*> wallInstances{};
     for (auto & instance : _wallInstances)
     {
         wallInstances.emplace_back(instance.get());
@@ -193,5 +200,43 @@ std::vector<glm::vec2> Map::AStar(Coord const& c_from, Coord const& c_to) const 
 //    }
 //    return result;
 //}
+
+//-----------------------------------------------------------------------
+
+std::vector<int> const & Map::GetWalls()
+{
+    return _walls;
+}
+
+//-----------------------------------------------------------------------
+
+int Map::GetRows()
+{
+    return _rows;
+}
+
+//-----------------------------------------------------------------------
+
+int Map::GetColumns()
+{
+    return _columns;
+}
+
+//-----------------------------------------------------------------------
+
+glm::vec3 Map::CalcPosition(int row, int column)
+{
+    MFA_ASSERT(column >= 0);
+    MFA_ASSERT(row >= 0);
+    MFA_ASSERT(row < _rows);
+    MFA_ASSERT(column < _columns);
+
+    auto const position = glm::vec3{ 
+        static_cast<float>(row) * _wallWidth + _startX, 
+        0.3f, 
+        static_cast<float>(column) * _wallHeight + _startY 
+    };
+    return position;
+}
 
 //-----------------------------------------------------------------------
