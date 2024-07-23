@@ -14,6 +14,7 @@ namespace MFA
 		std::shared_ptr<DisplayRenderPass> displayRenderPass,
 		std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
 		std::shared_ptr<RT::SamplerGroup> sampler,
+        std::shared_ptr<RT::BufferGroup> lightDirBuffer,
 		Params params
 	)
 		: _params(std::move(params))
@@ -23,6 +24,8 @@ namespace MFA
 		mViewProjBuffer = std::move(viewProjectionBuffer);
 
 		mSampler = std::move(sampler);
+
+        mLightDirBuffer = std::move(lightDirBuffer);
 
 		mDescriptorPool = RB::CreateDescriptorPool(
 			LogicalDevice::Instance->GetVkDevice(),
@@ -137,6 +140,15 @@ namespace MFA
 			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT // TODO: This buffer is not used in fragment shader. I need to findout why this error is thrown
 		};
 		bindings.emplace_back(modelViewProjectionBinding);
+
+        // Light direction
+        VkDescriptorSetLayoutBinding const LightDirBinding{
+            .binding = static_cast<uint32_t>(bindings.size()),
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+        };
+        bindings.emplace_back(LightDirBinding);
 
 		// Sampler
 		VkDescriptorSetLayoutBinding const samplerLayoutBinding{

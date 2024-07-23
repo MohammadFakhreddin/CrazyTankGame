@@ -23,14 +23,43 @@
 
 using namespace MFA;
 
+// Thin wrapper around a variable
+template <typename T>
+class VarTracker {
+public:
+    T data;
+
+    explicit VarTracker(T data) {
+        this->data = data;
+        mPrevData = this->data;
+    }
+
+    bool IsDirty()
+    {
+        bool dirty = false;
+        if (data != mPrevData) {
+            dirty = true;
+        }
+
+        mPrevData = data;
+        return dirty;
+    }
+
+private:
+    T mPrevData;
+};
+
 bool displayWireframe = false;
 
-void UI_Loop()
+void UI_Loop(VarTracker<glm::vec3> &lightDir)
 {
 	auto ui = MFA::UI::Instance;
 
 	ui->BeginWindow("Settings");
 	ImGui::Checkbox("Display wireframe", &displayWireframe);
+
+        ImGui::Spacing();
+        ImGui::SliderFloat3("Light dir", (float*)&lightDir.data, -1.0f, 1.0f);
 
         ImGui::Spacing();
         ImGui::Text("Background Color:");
@@ -123,12 +152,22 @@ int main()
 			cameraBufferTracker->SetData(Alias{ camera.ViewProjection() });
 		});
 
+        VarTracker<glm::vec3> lightDir({1.0f, 1.0f, 1.0f});
+                auto lightDirBuffer = RB::CreateHostVisibleUniformBuffer(
+                    device->GetVkDevice(),
+                    device->GetPhysicalDevice(),
+                    sizeof(glm::mat4),
+                    device->GetMaxFramePerFlight()
+                );
+                auto lightDirBufferTracker = std::make_shared<HostVisibleBufferTracker>(lightDirBuffer, Alias { lightDir.data });
+
 		auto defaultSampler = RB::CreateSampler(LogicalDevice::Instance->GetVkDevice(), {});
 
 		auto const shadingPipeline1 = std::make_shared<FlatShadingPipeline>(
 			displayRenderPass,
 			cameraBuffer,
 			defaultSampler,
+                        lightDirBuffer,
 			FlatShadingPipeline::Params{
 				.maxSets = 100,
 				.cullModeFlags = VK_CULL_MODE_BACK_BIT,
@@ -139,6 +178,7 @@ int main()
 			displayRenderPass,
 			cameraBuffer,
 			defaultSampler,
+                        lightDirBuffer,
 			FlatShadingPipeline::Params{
 				.maxSets = 100,
 				.cullModeFlags = VK_CULL_MODE_FRONT_BIT,
@@ -148,7 +188,8 @@ int main()
 		auto const wireFramePipeline = std::make_shared<FlatShadingPipeline>(
 			displayRenderPass,
 			cameraBuffer,
-			defaultSampler,
+                defaultSampler,
+                lightDirBuffer,
 			FlatShadingPipeline::Params{
 				.maxSets = 100,
 				.cullModeFlags = VK_CULL_MODE_NONE,
@@ -162,7 +203,7 @@ int main()
 		auto const linePipeline = std::make_shared<LinePipeline>(displayRenderPass, cameraBuffer, 10000);
 		auto lineRenderer = std::make_shared<LineRenderer>(linePipeline);
 
-		ui->UpdateSignal.Register([]()->void { UI_Loop(); });
+		ui->UpdateSignal.Register([&lightDir]()->void { UI_Loop(lightDir); });
 
 		auto errorTexture = CreateErrorTexture();
 
@@ -219,6 +260,11 @@ int main()
 				cameraBufferTracker->SetData(Alias{ camera.ViewProjection() });
 			}
 
+            if (lightDir.IsDirty())
+            {
+                lightDirBufferTracker->SetData(Alias{ lightDir.data });
+            }
+
 			ui->Update();
 
 			auto recordState = device->AcquireRecordState(swapChainResource->GetSwapChainImages().swapChain);
@@ -236,6 +282,7 @@ int main()
 				);
 
 				cameraBufferTracker->Update(recordState);
+                lightDirBufferTracker->Update(recordState);
 
 				displayRenderPass->Begin(recordState, ui->backgroundColor);
 

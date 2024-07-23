@@ -19,6 +19,8 @@ struct Material
     int placeholder2;
 };
 
+float3 lightDir;
+
 sampler textureSampler : register(s1, space0);
 
 ConstantBuffer <Material> material: register(b0, space1);
@@ -42,9 +44,6 @@ PSOut main(PSIn input) {
     }
 
     
-    // float3 lightDir = float3(-1.0f, -1.0f, -1.0f);
-    float3 lightDir = float3(1.0f, -1.0f, 1.0f);
-    // float ambient = 0.25f;
     float ambient = 0.25f;
 
     float dotProd = dot(normalize(-lightDir), normalize(input.worldNormal));
