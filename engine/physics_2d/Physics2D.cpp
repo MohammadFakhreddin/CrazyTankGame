@@ -180,6 +180,11 @@ bool Physics2D::MoveBox(
         box.v3 = v3;
 
         box.center = (box.v0 + box.v1 + box.v2 + box.v3) * 0.25f;
+        
+        box.v0v1N_dirty = true;
+        box.v1v2N_dirty = true;
+        box.v2v3N_dirty = true;
+        box.v3v0N_dirty = true;
 
         auto& aabb = item.aabb;
         AABB2D::Min(v0, v1, aabb.min);
@@ -579,6 +584,23 @@ glm::vec2 Physics2D::OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v
 
 //-----------------------------------------------------------------------
 
+void Physics2D::OrthogonalDirection(
+    bool & inOutIsDirty, 
+    glm::vec2 & inOutNormal, 
+    glm::vec2 const & v0, 
+    glm::vec2 const & v1, 
+    glm::vec2 const & center
+)
+{
+    if (inOutIsDirty == true)
+    {
+        inOutIsDirty = false;
+        inOutNormal = OrthogonalDirection(v0, v1, center);
+    }
+}
+
+//-----------------------------------------------------------------------
+
 bool Physics2D::RaySphereIntersection(
     Ray const& ray,
     float const rayMaxDistance,
@@ -634,7 +656,7 @@ bool Physics2D::RaySphereIntersection(
 bool Physics2D::RayBoxIntersection(
     Ray const& ray,
 	float const rayMaxDistance,
-	Box const& box, 
+	Box & box, 
     float& outTime,
     glm::vec2& outNormal
 )
@@ -644,74 +666,74 @@ bool Physics2D::RayBoxIntersection(
     outTime = rayMaxDistance + 1.0f;
 
     {
-        float distance{};
-        glm::vec2 const normal = OrthogonalDirection(box.v1, box.v0, box.center);
+        float time{};
+        OrthogonalDirection(box.v0v1N_dirty, box.v0v1N, box.v1, box.v0, box.center);
         bool const lineHasCollision = RayLineIntersection(
             ray,
             rayMaxDistance,
             box.v0,
             box.v1,
-            normal,
-            distance
+            box.v0v1N,
+            time
         );
         if (lineHasCollision == true)
         {
-            outTime = distance;
-            outNormal = normal;
+            outTime = time;
+            outNormal = box.v0v1N;
             hasCollision = true;
         }
     }
     {
         float time{};
-        glm::vec2 const normal = OrthogonalDirection(box.v2, box.v1, box.center);
+        OrthogonalDirection(box.v1v2N_dirty, box.v1v2N, box.v2, box.v1, box.center);
         bool const lineHasCollision = RayLineIntersection(
             ray,
             rayMaxDistance,
             box.v1,
             box.v2,
-            normal,
+            box.v1v2N,
             time
         );
         if (lineHasCollision == true && time < outTime)
         {
             outTime = time;
-            outNormal = normal;
+            outNormal = box.v1v2N;
             hasCollision = true;
         }
     }
     {
         float time{};
-        glm::vec2 const normal = OrthogonalDirection(box.v3, box.v2, box.center);
+        OrthogonalDirection(box.v2v3N_dirty, box.v2v3N, box.v3, box.v2, box.center);
         bool const lineHasCollision = RayLineIntersection(
             ray,
             rayMaxDistance,
             box.v2,
             box.v3,
-            normal,
+            box.v2v3N,
             time
         );
         if (lineHasCollision == true && time < outTime)
         {
             outTime = time;
-            outNormal = normal;
+            outNormal = box.v2v3N;
             hasCollision = true;
         }
     }
     {
         float time{};
-        glm::vec2 const normal = OrthogonalDirection(box.v0, box.v3, box.center);
+        OrthogonalDirection(box.v3v0N_dirty, box.v3v0N, box.v0, box.v3, box.center);
         bool const lineHasCollision = RayLineIntersection(
             ray,
             rayMaxDistance,
             box.v3,
             box.v0,
-            normal,
+            box.v3v0N,
             time
         );
         if (lineHasCollision == true && time < outTime)
         {
             outTime = time;
-            outNormal = normal;
+            outNormal = box.v3v0N;
             hasCollision = true;
         }
     }
@@ -766,7 +788,7 @@ bool Physics2D::RayLineIntersection(
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::BoxAABB_Collision(Box const& box, Entity const& aabbEntity)
+bool Physics2D::BoxAABB_Collision(Box & box, Entity const & aabbEntity)
 {
     if (aabbEntity.aabb.Overlap(box.v0) ||
         aabbEntity.aabb.Overlap(box.v1) ||
@@ -784,7 +806,7 @@ bool Physics2D::BoxAABB_Collision(Box const& box, Entity const& aabbEntity)
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::SphereBoxCollision(Sphere const& sphere, Box const& box)
+bool Physics2D::SphereBoxCollision(Sphere const & sphere, Box & box)
 {
     if (IsInsideSphere(sphere, box.v0) ||
         IsInsideSphere(sphere, box.v1) ||
@@ -798,7 +820,7 @@ bool Physics2D::SphereBoxCollision(Sphere const& sphere, Box const& box)
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::BoxBoxCollision(Box const& box0, Box const& box1)
+bool Physics2D::BoxBoxCollision(Box & box0, Box & box1)
 {
     if (IsInsideBox(box0, box1.v0) ||
         IsInsideBox(box0, box1.v1) ||
@@ -816,7 +838,7 @@ bool Physics2D::BoxBoxCollision(Box const& box0, Box const& box1)
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::SphereSphere_Collision(Sphere const& sphere0, Sphere const& sphere1)
+bool Physics2D::SphereSphere_Collision(Sphere const& sphere0, Sphere const & sphere1)
 {
     auto const dist2 = glm::length2(sphere0.center - sphere1.center);
 
@@ -844,38 +866,60 @@ bool Physics2D::IsInsideSphere(Sphere const& sphere, glm::vec2 const& position)
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::IsInsideBox(Box const& box, glm::vec2 const& position)
+bool Physics2D::IsInsideBox(Box & box, glm::vec2 const& position, glm::vec2 & outClosestWallNormal)
 {
+    float closestWallDistance = std::numeric_limits<float>::max();
+    
     {
-        glm::vec2 const normal = OrthogonalDirection(box.v1, box.v0, box.center);
-        auto const dot = glm::dot(position - box.v0, normal);
+        OrthogonalDirection(box.v0v1N_dirty, box.v0v1N, box.v1, box.v0, box.center);
+        auto const dot = glm::dot(position - box.v0, box.v0v1N);
         if (dot > 0)
         {
             return false;
         }
+        if (dot < closestWallDistance)
+        {
+            outClosestWallNormal = box.v0v1N;
+            closestWallDistance = dot;
+        }
     }
     {
-        glm::vec2 const normal = OrthogonalDirection(box.v2, box.v1, box.center);
-        auto const dot = glm::dot(position - box.v1, normal);
+        OrthogonalDirection(box.v1v2N_dirty, box.v1v2N, box.v2, box.v1, box.center);
+        auto const dot = glm::dot(position - box.v1, box.v1v2N);
         if (dot > 0)
         {
             return false;
         }
+        if (dot < closestWallDistance)
+        {
+            outClosestWallNormal = box.v1v2N;   
+            closestWallDistance = dot;
+        }
     }
     {
-        glm::vec2 const normal = OrthogonalDirection(box.v3, box.v2, box.center);
-        auto const dot = glm::dot(position - box.v2, normal);
+        OrthogonalDirection(box.v2v3N_dirty, box.v2v3N, box.v3, box.v2, box.center);
+        auto const dot = glm::dot(position - box.v2, box.v2v3N);
         if (dot > 0)
         {
             return false;
         }
+        if (dot < closestWallDistance)
+        {
+            outClosestWallNormal = box.v2v3N;
+            closestWallDistance = dot;
+        }
     }
     {
-        glm::vec2 const normal = OrthogonalDirection(box.v0, box.v3, box.center);
-        auto const dot = glm::dot(position - box.v3, normal);
+        OrthogonalDirection(box.v3v0N_dirty, box.v3v0N, box.v0, box.v3, box.center);
+        auto const dot = glm::dot(position - box.v3, box.v3v0N);
         if (dot > 0)
         {
             return false;
+        }
+        if (dot < closestWallDistance)
+        {
+            outClosestWallNormal = box.v3v0N;
+            closestWallDistance = dot;
         }
     }
 
@@ -884,10 +928,21 @@ bool Physics2D::IsInsideBox(Box const& box, glm::vec2 const& position)
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::CheckForAABB_Collision(Entity const & item) const
+bool Physics2D::IsInsideBox(
+    Box & box,
+    glm::vec2 const & position
+)
+{
+    glm::vec2 outClosestWallNormal{};
+    return IsInsideBox(box, position, outClosestWallNormal);
+}
+
+//-----------------------------------------------------------------------
+
+bool Physics2D::CheckForAABB_Collision(Entity & item) const
 {
     AABB2D const & aabb = item.aabb;
-    for (auto const * other : _itemList)
+    for (auto * other : _itemList)
     {
         if (other->id != item.id && (other->layer & item.layerMask) > 0)
         {
@@ -925,7 +980,7 @@ bool Physics2D::CheckForAABB_Collision(Entity const & item) const
 
 bool Physics2D::CheckForSphereCollision(Entity const& item) const
 {
-    for (auto const* other : _itemList)
+    for (auto * other : _itemList)
     {
         if (other->id != item.id && (other->layer & item.layerMask) > 0)
         {
@@ -961,9 +1016,9 @@ bool Physics2D::CheckForSphereCollision(Entity const& item) const
 
 //-----------------------------------------------------------------------
 
-bool Physics2D::CheckForBoxCollision(Entity const& item) const
+bool Physics2D::CheckForBoxCollision(Entity & item) const
 {
-    for (auto const* other : _itemList)
+    for (auto * other : _itemList)
     {
         if (other->id != item.id && (other->layer & item.layerMask) > 0)
         {
