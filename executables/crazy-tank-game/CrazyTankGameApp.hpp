@@ -28,7 +28,6 @@ class CrazyTankGameApp
 public:
 
     using ShadingPipeline = MFA::FlatShadingPipeline;
-    using CameraBufferTracker = MFA::HostVisibleBufferTracker;
     
     explicit CrazyTankGameApp();
 
@@ -66,8 +65,12 @@ private:
     // TODO: We can have a fixed camera and a debug camera
     std::unique_ptr<FollowCamera> gameCamera{};
     std::unique_ptr<MFA::ArcballCamera> debugCamera{};
-	std::shared_ptr<MFA::RT::BufferGroup> cameraBuffer{};
-	std::shared_ptr<CameraBufferTracker> cameraBufferTracker{};
+	
+    std::shared_ptr<MFA::RT::BufferGroup> cameraBuffer{};
+	std::shared_ptr<MFA::HostVisibleBufferTracker> cameraBufferTracker{};
+
+    std::shared_ptr<MFA::RT::BufferGroup> lightSourceBuffer{};
+	std::shared_ptr<MFA::HostVisibleBufferTracker> lightSourceBufferTracker{};
 
     std::shared_ptr<ShadingPipeline> shadingPipeline{};
 

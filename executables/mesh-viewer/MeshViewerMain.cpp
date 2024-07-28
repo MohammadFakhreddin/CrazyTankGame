@@ -51,6 +51,13 @@ private:
 
 bool displayWireframe = false;
 
+glm::vec4 backgroundColor {
+	114.0f / 255.0f, 
+	144.0f / 255.0f, 
+	154.0f / 255.0f, 
+	200.0f / 255.0f
+};
+
 void UI_Loop(VarTracker<glm::vec3> &lightDir)
 {
 	auto ui = MFA::UI::Instance;
@@ -64,7 +71,7 @@ void UI_Loop(VarTracker<glm::vec3> &lightDir)
         ImGui::Spacing();
         ImGui::Text("Background Color:");
         auto flags = ImGuiColorEditFlags_PickerHueWheel | ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_NoSidePreview | ImGuiColorEditFlags_NoLabel;
-        ImGui::ColorPicker4("MyColor##4", (float*)&ui->backgroundColor, flags, nullptr);
+        ImGui::ColorPicker4("MyColor##4", (float*)&backgroundColor, flags, nullptr);
 	ui->EndWindow();
 };
 
@@ -284,7 +291,7 @@ int main()
 				cameraBufferTracker->Update(recordState);
                 lightDirBufferTracker->Update(recordState);
 
-				displayRenderPass->Begin(recordState, ui->backgroundColor);
+				displayRenderPass->Begin(recordState, backgroundColor);
 
 				if (displayWireframe == true)
 				{

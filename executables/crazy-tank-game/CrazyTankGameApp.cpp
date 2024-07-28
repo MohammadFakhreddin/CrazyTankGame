@@ -66,12 +66,26 @@ CrazyTankGameApp::CrazyTankGameApp()
 	);
 
 	MFA_ASSERT(cameraBuffer != nullptr);
-	cameraBufferTracker = std::make_shared<CameraBufferTracker>(cameraBuffer);
+	cameraBufferTracker = std::make_shared<HostVisibleBufferTracker>(cameraBuffer);
+
+	lightSourceBuffer = RB::CreateHostVisibleUniformBuffer(
+		device->GetVkDevice(),
+		device->GetPhysicalDevice(),
+		sizeof(ShadingPipeline::LightSource),
+		device->GetMaxFramePerFlight()
+	);
+	MFA_ASSERT(lightSourceBuffer != nullptr);
+	// TODO: Move this to the proper place
+	ShadingPipeline::LightSource lightSourceData{};
+	lightSourceData.dir = {-1, 0, 0};
+	lightSourceData.color = {1, 1, 1};
+	lightSourceBufferTracker = std::make_shared<HostVisibleBufferTracker>(lightSourceBuffer, Alias{lightSourceData});
 
 	shadingPipeline = std::make_shared<ShadingPipeline>(
         displayRenderPass,
         cameraBuffer,
 		defaultSampler,
+		lightSourceBuffer,
         ShadingPipeline::Params{
 			.cullModeFlags = VK_CULL_MODE_BACK_BIT,
 			.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -169,7 +183,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 	MFA_ASSERT(playerTank != nullptr);
 	MFA_ASSERT(cameraBufferTracker != nullptr);
-	gameCamera = std::make_unique<FollowCamera>(playerTank->Transform(),cameraBufferTracker);
+	gameCamera = std::make_unique<FollowCamera>(playerTank->Transform(), cameraBufferTracker);
 
 	{// Debug camera
 		debugCamera = std::make_unique<MFA::ArcballCamera>(glm::vec3{}, -Math::ForwardVec3);
@@ -198,9 +212,11 @@ CrazyTankGameApp::~CrazyTankGameApp()
 	shadingPipeline.reset();
 	defaultSampler.reset();
 	cameraBufferTracker.reset();
+	lightSourceBufferTracker.reset();
 	debugCamera.reset();
 	gameCamera.reset();
 	cameraBuffer.reset();
+	lightSourceBuffer.reset();
 	ui.reset();
 	textData.reset();
 	fontSampler.reset();
@@ -328,6 +344,8 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 	);
 
 	cameraBufferTracker->Update(recordState);
+
+	lightSourceBufferTracker->Update(recordState);
 
 	textData->vertexData->Update(recordState);
 

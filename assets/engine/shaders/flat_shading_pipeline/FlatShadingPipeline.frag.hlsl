@@ -19,11 +19,19 @@ struct Material
     int placeholder2;
 };
 
-float3 lightDir;
+struct LightSource
+{
+    float3 dir;
+    float placeholder0;
+    float3 color;
+    float placeholder1;
+};
 
-sampler textureSampler : register(s1, space0);
+ConstantBuffer <LightSource> lightSource : register(b1, space0);
 
-ConstantBuffer <Material> material: register(b0, space1);
+sampler textureSampler : register(s2, space0);
+
+ConstantBuffer <Material> material : register(b0, space1);
 
 Texture2D baseColorTexture : register(t1, space1);
 
@@ -42,11 +50,10 @@ PSOut main(PSIn input) {
         color = baseColorTexture.Sample(textureSampler, input.baseColorUV);
         alpha = 1.0;
     }
-
     
     float ambient = 0.25f;
 
-    float dotProd = dot(normalize(-lightDir), normalize(input.worldNormal));
+    float dotProd = dot(normalize(-lightSource.dir), normalize(input.worldNormal));
     float3 dirLight = max(dotProd, 0.0f) * color;
     float3 color2 = dirLight + ambient * color;
     // color = ambient * color;

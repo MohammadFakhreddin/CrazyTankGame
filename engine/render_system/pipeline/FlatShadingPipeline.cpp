@@ -14,7 +14,7 @@ namespace MFA
 		std::shared_ptr<DisplayRenderPass> displayRenderPass,
 		std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
 		std::shared_ptr<RT::SamplerGroup> sampler,
-        std::shared_ptr<RT::BufferGroup> lightDirBuffer,
+        std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
 		Params params
 	)
 		: _params(std::move(params))
@@ -25,7 +25,7 @@ namespace MFA
 
 		mSampler = std::move(sampler);
 
-        mLightDirBuffer = std::move(lightDirBuffer);
+        mLightSourceBuffer = std::move(lightSourceBuffer);
 
 		mDescriptorPool = RB::CreateDescriptorPool(
 			LogicalDevice::Instance->GetVkDevice(),
@@ -132,23 +132,23 @@ namespace MFA
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings{};
 
-		// ModelViewProjection
+		// ViewProjection
 		VkDescriptorSetLayoutBinding modelViewProjectionBinding{
 			.binding = static_cast<uint32_t>(bindings.size()),
 			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT // TODO: This buffer is not used in fragment shader. I need to findout why this error is thrown
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT
 		};
 		bindings.emplace_back(modelViewProjectionBinding);
 
-        // Light direction
-        VkDescriptorSetLayoutBinding const LightDirBinding{
+        // Light source
+        VkDescriptorSetLayoutBinding const lightSourceBinding{
             .binding = static_cast<uint32_t>(bindings.size()),
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = 1,
             .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
         };
-        bindings.emplace_back(LightDirBinding);
+        bindings.emplace_back(lightSourceBinding);
 
 		// Sampler
 		VkDescriptorSetLayoutBinding const samplerLayoutBinding{
@@ -343,12 +343,20 @@ namespace MFA
 			/////////////////////////////////////////////////////////////////
 
 			// ViewProjectionTransform
-			VkDescriptorBufferInfo bufferInfo{
+			VkDescriptorBufferInfo viewProjBufferInfo{
 				.buffer = mViewProjBuffer->buffers[frameIndex]->buffer,
 				.offset = 0,
 				.range = mViewProjBuffer->bufferSize,
 			};
-			descriptorSetSchema.AddUniformBuffer(&bufferInfo);
+			descriptorSetSchema.AddUniformBuffer(&viewProjBufferInfo);
+
+			// LightSourceBuffer
+			VkDescriptorBufferInfo lightSourceBufferInfo{
+				.buffer = mLightSourceBuffer->buffers[frameIndex]->buffer,
+				.offset = 0,
+				.range = mLightSourceBuffer->bufferSize
+			};
+			descriptorSetSchema.AddUniformBuffer(&lightSourceBufferInfo);
 
 			// Sampler
 			VkDescriptorImageInfo texturesSamplerInfo{
@@ -362,14 +370,16 @@ namespace MFA
 		}
 	}
 
-        void FlatShadingPipeline::reload()
-        {
-            MFA_LOG_DEBUG("Reloading shading pipeline");
+	//-------------------------------------------------------------------------------------------------
 
-            LogicalDevice::Instance->DeviceWaitIdle();
-            CreatePipeline();
-        }
+	void FlatShadingPipeline::reload()
+	{
+		MFA_LOG_DEBUG("Reloading shading pipeline");
 
-        //-------------------------------------------------------------------------------------------------
+		LogicalDevice::Instance->DeviceWaitIdle();
+		CreatePipeline();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 
 }

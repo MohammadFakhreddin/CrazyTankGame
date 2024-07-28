@@ -5,6 +5,8 @@
 #include "render_resource/MSAA_RenderResource.hpp"
 #include "render_resource/SwapChainRenderResource.hpp"
 
+#include <glm/glm.hpp>
+
 #include <memory>
 
 namespace MFA
@@ -28,8 +30,13 @@ namespace MFA
 
         [[nodiscard]]
         VkRenderPass GetVkRenderPass() override;
-        
-        void Begin(RT::CommandRecordState & recordState, std::optional<std::array<float, 4>> backgroundColor = {});
+
+        void Begin(RT::CommandRecordState & recordState)
+        {
+            Begin(recordState, glm::vec4{0.1f, 0.1f, 0.1f, 1.0f});
+        }
+
+        void Begin(RT::CommandRecordState & recordState, glm::vec4 backgroundColor);
 
         void End(RT::CommandRecordState & recordState);
         

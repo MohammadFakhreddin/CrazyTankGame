@@ -24,6 +24,14 @@ namespace MFA
             glm::mat4 matrix{};
         };
 
+        struct LightSource
+        {
+            glm::vec3 dir{};
+            float placeholder0{};
+            glm::vec3 color{};
+            float placeholder1{};
+        };
+
         struct PushConstants
         {
             glm::mat4 model;
@@ -50,7 +58,7 @@ namespace MFA
             std::shared_ptr<DisplayRenderPass> displayRenderPass,
             std::shared_ptr<RT::BufferGroup> viewProjectionBuffer,
             std::shared_ptr<RT::SamplerGroup> sampler,
-            std::shared_ptr<RT::BufferGroup> lightDirBuffer,
+            std::shared_ptr<RT::BufferGroup> lightSourceBuffer,
             Params params = Params {
                 .maxSets = 100,
                 .cullModeFlags = VK_CULL_MODE_BACK_BIT,
@@ -93,7 +101,7 @@ namespace MFA
 
         std::shared_ptr<RT::PipelineGroup> mPipeline{};
         std::shared_ptr<RT::BufferGroup> mViewProjBuffer{};
-        std::shared_ptr<RT::BufferGroup> mLightDirBuffer{};
+        std::shared_ptr<RT::BufferGroup> mLightSourceBuffer{};
         std::shared_ptr<RT::SamplerGroup> mSampler{};
 
         RT::DescriptorSetGroup mPerPipelineDescriptorSetGroup{};
