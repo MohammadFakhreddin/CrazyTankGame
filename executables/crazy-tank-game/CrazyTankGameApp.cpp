@@ -75,10 +75,7 @@ CrazyTankGameApp::CrazyTankGameApp()
 		device->GetMaxFramePerFlight()
 	);
 	MFA_ASSERT(lightSourceBuffer != nullptr);
-	// TODO: Move this to the proper place
-	ShadingPipeline::LightSource lightSourceData{};
-	lightSourceData.dir = {-1, 0, 0};
-	lightSourceData.color = {1, 1, 1};
+	
 	lightSourceBufferTracker = std::make_shared<HostVisibleBufferTracker>(lightSourceBuffer, Alias{lightSourceData});
 
 	shadingPipeline = std::make_shared<ShadingPipeline>(
@@ -426,6 +423,29 @@ void CrazyTankGameApp::DebugUI(float deltaTimeSec)
 	{
 		gameCamera->DebugUI();
 		ImGui::TreePop();
+	}
+	if (ImGui::TreeNode("Light source"))
+	{
+		bool changed = false;
+		
+		if (ImGui::InputFloat3("Direction", &lightSourceData.dir[0]))
+		{
+			changed = true;
+		}
+
+		if (ImGui::InputFloat3("Color", &lightSourceData.color[0]))
+		{
+			changed = true;
+		}
+		
+		ImGui::TreePop();
+
+		if (changed == true)
+		{
+			auto * bufferData = reinterpret_cast<ShadingPipeline::LightSource *>(lightSourceBufferTracker->Data());
+			bufferData->dir = glm::normalize(lightSourceData.dir);
+			bufferData->color = lightSourceData.color;
+		}
 	}
 	ui->EndWindow();
 }

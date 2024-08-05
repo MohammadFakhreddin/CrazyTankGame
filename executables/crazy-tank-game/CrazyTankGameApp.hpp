@@ -111,4 +111,9 @@ private:
     std::shared_ptr<MFA::RT::SamplerGroup> fontSampler{};
     std::unique_ptr<MFA::ConsolasFontRenderer::TextData> textData{};
 
+    ShadingPipeline::LightSource lightSourceData{
+        .dir = {0.0, -1.0, 0.0},
+        .color = {1.0, 1.0, 1.0}
+    };
+    
 };
