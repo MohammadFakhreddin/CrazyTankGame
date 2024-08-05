@@ -125,45 +125,23 @@ CrazyTankGameApp::CrazyTankGameApp()
 	PrepareInGameText();
 
 	physics2D = std::make_unique<Physics2D>(pointRenderer, lineRenderer);
-	// TODO: Map needs to generated randomly every time with a limited number of walls
-	// TODO: Write a map generator
-	// TODO: We need something for the spawn points
-	std::vector<int> walls{
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	};
+	
 
-	map = std::make_unique<Map>(40, 40, 20, 20, walls, shadingPipeline, errorTexture);
+	InitMap();
 
-	tankRenderer = std::make_unique<MeshRenderer>(
+	auto const tankModel = Importer::GLTF_Model(Path::Instance->Get("models/enemy_tank.glb"));
+
+	playerTankRenderer = std::make_unique<MeshRenderer>(
 		shadingPipeline,
-		Importer::GLTF_Model(Path::Instance->Get("models/enemy_tank.glb")),
+		tankModel,
 		errorTexture,
 		true,
 		glm::vec4{37.0f / 255.0f, 150.0f / 255.0f, 190.0f / 255.0f, 1.0f}
 	);
-
+	
 	{// Player params
 		playerTankParams = std::make_unique<Tank::Params>();
-		playerTank = std::make_unique<Tank>(*tankRenderer, playerTankParams);
+		playerTank = std::make_unique<Tank>(*playerTankRenderer, playerTankParams);
 		playerTank->Transform().SetLocalScale(glm::vec3{0.25f, 0.25f, 0.25f});
 	}
 
@@ -190,7 +168,28 @@ CrazyTankGameApp::CrazyTankGameApp()
 		debugCamera->SetnearPlane(0.010f);
 	}
 
+	InitPathFinder();
+
 	// TODO: We need a spawn position for the enemies
+	enemyTankRenderer = std::make_unique<MeshRenderer>(
+		shadingPipeline,
+		tankModel,
+		errorTexture,
+		true,
+		glm::vec4{252.0f / 255.0f, 69.0f / 255.0f, 3.0f / 255.0f, 1.0f}
+	);
+
+	// TODO: Write a player and enemy behaviour class
+	{
+		// TODO: Use spawn positions
+		auto const node0Position = pathFinder->NodePosition(0);
+		enemyTankParams = std::make_unique<Tank::Params>();
+		enemyTanks.emplace_back(std::make_unique<Tank>(*enemyTankRenderer, enemyTankParams));
+		auto & enemyTransform = enemyTanks.back()->Transform();
+		enemyTransform.SetLocalScale(glm::vec3{0.25f, 0.25f, 0.25f});
+		enemyTransform.SetLocalPosition(node0Position);
+	}
+
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -202,7 +201,8 @@ CrazyTankGameApp::~CrazyTankGameApp()
 	linePipeline.reset();
 	pointRenderer.reset();
 	pointPipeline.reset();
-	tankRenderer.reset();
+	enemyTankRenderer.reset();
+	playerTankRenderer.reset();
 	bulletRenderer.reset();
 	map.reset();
 	errorTexture.reset();
@@ -289,40 +289,11 @@ void CrazyTankGameApp::Update(float deltaTimeSec)
 
 	physics2D->Update();
 
-	for (auto & bullet : bullets)
-	{
-		bullet->Update(Time::DeltaTimeSec());
-	}
+	UpdateBullets(deltaTimeSec);
 
-	for (int i = bullets.size() - 1; i >= 0; --i)
-	{
-		if (bullets[i]->IsAlive() == false)
-		{
-			bullets.erase(bullets.begin() + i);
-		}
-	}
+	UpdatePlayer(deltaTimeSec);
 
-	{// Player movement
-		glm::vec2 direction = inputAxis;
-		auto const magnitude = glm::length(inputAxis);
-		if (magnitude > glm::epsilon<float>())
-		{
-			direction /= magnitude;
-			playerTank->Move(direction, deltaTimeSec);
-		}
-	}
-
-	// TODO: Check if tanks are alive or not!
-
-	// Player shoot
-	if (inputA == true)
-	{
-		auto bullet = playerTank->Shoot(bulletParams);
-		if (bullet != nullptr)
-		{
-			bullets.emplace_back(std::move(bullet));
-		}
-	}
+	UpdateEnemies(deltaTimeSec);
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -347,15 +318,26 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 	textData->vertexData->Update(recordState);
 
 	displayRenderPass->Begin(recordState);
-
-	if (renderPlayer == true)
-	{
-		tankRenderer->Render(recordState,{playerTank->MeshInstance()});
+	
+	// Rendering player tank
+	playerTankRenderer->Render(recordState, {playerTank->MeshInstance()});
+	
+	{// Rendering enemy tank
+		std::vector<MeshInstance *> instances{};
+		for (auto & enemyTank : enemyTanks)
+		{	
+			instances.emplace_back(enemyTank->MeshInstance());
+		}
+		enemyTankRenderer->Render(recordState, instances);
 	}
 
-	for (auto & bullet : bullets)
-	{
-		bulletRenderer->Render(recordState, {bullet->Transform().GlobalTransform()});
+	{// Rendering bullets
+		std::vector<glm::mat4> bulletTransforms{};
+		for (auto & bullet : bullets)
+		{
+			bulletTransforms.emplace_back(bullet->Transform().GlobalTransform());
+		}
+		bulletRenderer->Render(recordState, bulletTransforms);
 	}
 
 	if (renderMap == true)
@@ -585,6 +567,203 @@ void CrazyTankGameApp::UpdateInGameText(float deltaTimeSec)
 		0.0f,
 		ConsolasFontRenderer::AddTextParams{.textAlign = ConsolasFontRenderer::TextAlign::Left}
 	);
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void CrazyTankGameApp::InitMap()
+{
+	// TODO: Map needs to generated randomly every time with a limited number of walls
+	// TODO: Write a map generator
+	// TODO: We need something for the spawn points and for the enemies
+	std::vector<int> walls{
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	};
+	int rows = 20;
+	int columns = 20;
+
+	map = std::make_unique<Map>(40, 40, 20, 20, walls, shadingPipeline, errorTexture);
+
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void CrazyTankGameApp::InitPathFinder()
+{
+	auto const rows = map->GetRows();
+	auto const columns = map->GetColumns();
+	auto const & walls = map->GetWalls();
+
+	pathFinder = std::make_unique<PathFinder>();
+	
+	std::string idMap = "";
+	std::vector<PathFinder::NodeId> nodes{};
+	for (int j = 0; j < rows; ++j)
+	{
+		for (int i = 0; i < columns; ++i)
+		{
+			if (walls[j * columns + i] != 1)
+			{
+				auto const position = map->CalcPosition(j, i);
+				nodes.emplace_back(pathFinder->AddNode(position));
+				idMap += "=" + std::to_string(nodes.back()) + "=";
+			}
+			else
+			{
+				nodes.emplace_back(PathFinder::InvalidNode);
+				idMap += "=" + std::to_string(nodes.back()) + "=";
+			}
+		}
+		idMap += "\n";
+	}
+	MFA_LOG_INFO("Id map is\n%s", idMap.c_str());
+
+	for (int j = 0; j < rows; ++j)
+	{
+		for (int i = 0; i < columns; ++i)
+		{
+			auto myIdx = j * columns + i;
+			if (walls[myIdx] != 1)
+			{
+				auto myID = nodes[myIdx]; 
+
+				auto rightIdx = (j * columns) + i + 1;
+				if (walls[rightIdx] != 1)
+				{
+					auto const addResult = pathFinder->AddEdge(myID, nodes[rightIdx]);
+					MFA_ASSERT(addResult == true);
+				}
+
+				auto forwardIdx = ((j + 1) * columns) + i;
+				if (walls[forwardIdx] != 1)
+				{
+					auto const addResult = pathFinder->AddEdge(myID, nodes[forwardIdx]);
+					MFA_ASSERT(addResult == true);
+				}
+
+				auto forwardRightIdx = ((j + 1) * columns) + i + 1;
+				if (walls[rightIdx] != 1 && walls[forwardIdx] != 1 && walls[forwardRightIdx] != 1)
+				{
+					auto const addResult = pathFinder->AddEdge(myID, nodes[forwardRightIdx]);
+					MFA_ASSERT(addResult == true);
+				}
+			}
+		}
+	}
+
+	pathFinder->CachePaths();
+	
+	// auto currentNode = 0;
+	// auto targetNode = 40;
+
+	// MFA_LOG_INFO("Trying to find a path from %d to %d", currentNode, targetNode);
+	// std::string path = std::to_string(currentNode);
+	// do
+	// {
+	// 	auto const [findResult, node] = pathFinder->FindNextNode(currentNode, targetNode);
+	// 	MFA_ASSERT(findResult == true);
+	// 	currentNode = node;
+	// 	path += "/" + std::to_string(currentNode);
+	// }
+	// while (currentNode != targetNode);
+	// MFA_LOG_INFO("The path is %s", path.c_str());
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void CrazyTankGameApp::UpdateBullets(float deltaTimeSec)
+{
+	for (auto & bullet : bullets)
+	{
+		bullet->Update(deltaTimeSec);
+	}
+
+	for (int i = bullets.size() - 1; i >= 0; --i)
+	{
+		if (bullets[i]->IsAlive() == false)
+		{
+			bullets.erase(bullets.begin() + i);
+		}
+	}
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void CrazyTankGameApp::UpdatePlayer(float deltaTimeSec)
+{
+	// Player behaviour code, TODO: Move it to player behaviour
+	{// Player movement
+		glm::vec2 direction = inputAxis;
+		auto const magnitude = glm::length(inputAxis);
+		if (magnitude > glm::epsilon<float>())
+		{
+			direction /= magnitude;
+			playerTank->Move(direction, deltaTimeSec);
+		}
+	}
+
+	// TODO: Check if tanks are alive or not!
+
+	// Player shoot
+	if (inputA == true)
+	{
+		auto bullet = playerTank->Shoot(bulletParams);
+		if (bullet != nullptr)
+		{
+			bullets.emplace_back(std::move(bullet));
+		}
+	}
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void CrazyTankGameApp::UpdateEnemies(float deltaTimeSec)
+{
+	auto const playerNode = pathFinder->FindNearestNode(playerTank->Transform().GlobalPosition());
+	for (auto & enemyTank : enemyTanks)
+	{
+		auto const enemyNode = pathFinder->FindNearestNode(enemyTank->Transform().GlobalPosition());
+		MFA_ASSERT(enemyNode >= 0);
+		auto const [success, nextNode] = pathFinder->FindNextNode(enemyNode, playerNode);
+		MFA_ASSERT(success == true && nextNode >= 0);
+
+		auto const & currentPosition = enemyTank->Transform().GlobalPosition();
+		auto const nextNodePosition = pathFinder->NodePosition(nextNode);
+		auto const vector = nextNodePosition - currentPosition;
+		auto const magnitude = glm::length(vector);
+		if (magnitude > glm::epsilon<float>())
+		{
+			auto const direction = vector / magnitude;
+			enemyTank->Move(glm::vec2 {direction.x, direction.z}, deltaTimeSec);
+		}
+	}
+
+	for (int i = enemyTanks.size() - 1; i >= 0; --i)
+	{
+		if (enemyTanks[i]->IsAlive() == false)
+		{
+			enemyTanks.erase(enemyTanks.begin() + i);
+		}
+	}
 }
 
 //------------------------------------------------------------------------------------------------------

@@ -37,6 +37,9 @@ public:
 	[[nodiscard]]
 	MFA::Transform & Transform();
 
+	[[nodiscard]]
+	bool IsAlive() const;
+
 private:
 
 	std::unique_ptr<MFA::MeshInstance> _meshInstance{};

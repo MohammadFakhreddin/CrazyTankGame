@@ -18,6 +18,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/Bullet.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/FollowCamera.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/FollowCamera.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PathFinder.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PathFinder.cpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

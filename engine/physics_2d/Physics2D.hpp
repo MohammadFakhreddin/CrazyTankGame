@@ -53,6 +53,18 @@ public:
         glm::vec2 v3{};
 
         glm::vec2 center{};
+
+        glm::vec2 v0v1N{};
+        bool v0v1N_dirty = true;
+        
+        glm::vec2 v1v2N{};
+        bool v1v2N_dirty = true;
+        
+        glm::vec2 v2v3N{};
+        bool v2v3N_dirty = true;
+    
+        glm::vec2 v3v0N{};
+        bool v3v0N_dirty = true;
     };
 
 private:
@@ -115,7 +127,7 @@ public:
 		glm::vec2 const & max, 
 		bool checkForCollision = true
     );
-
+    
 	// Returns false if collision detected unless the object is static
     bool MoveSphere(
         EntityID id, 
@@ -176,6 +188,15 @@ private:
     static glm::vec2 OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v1, glm::vec2 const& center);
 
     [[nodiscard]]
+    static void OrthogonalDirection(
+        bool & inOutIsDirty, 
+        glm::vec2 & inOutNormal, 
+        glm::vec2 const& v0, 
+        glm::vec2 const& v1, 
+        glm::vec2 const& center
+    );
+
+    [[nodiscard]]
     static bool RaySphereIntersection(
         Ray const & ray,
 		float rayMaxDistance, 
@@ -188,7 +209,7 @@ private:
     static bool RayBoxIntersection(
         Ray const& ray,
         float rayMaxDistance,
-        Box const& box,
+        Box & box,
         float & outTime,            // Hit time is between 0 to 1
         glm::vec2 & outNormal
     );
@@ -205,20 +226,20 @@ private:
 
     [[nodiscard]]
     static bool BoxAABB_Collision(
-		Box const & box,
+		Box & box,
         Entity const & aabbEntity
     );
 
     [[nodiscard]]
     static bool SphereBoxCollision(
 		Sphere const & sphere,
-        Box const & box
+        Box & box
     );
 
     [[nodiscard]]
     static bool BoxBoxCollision(
-		Box const & box0,
-        Box const & box1
+		Box & box0,
+        Box & box1
     );
 
     [[nodiscard]]
@@ -241,18 +262,25 @@ private:
 
     [[nodiscard]]
     static bool IsInsideBox(
-		Box const & box,
+		Box & box,
+        glm::vec2 const & position,
+        glm::vec2 & outClosestWallNormal
+    );
+
+    [[nodiscard]]
+    static bool IsInsideBox(
+		Box & box,
         glm::vec2 const & position
     );
 
     [[nodiscard]]
-    bool CheckForAABB_Collision(Entity const & item) const;
+    bool CheckForAABB_Collision(Entity & item) const;
 
     [[nodiscard]]
     bool CheckForSphereCollision(Entity const& item) const;
 
     [[nodiscard]]
-    bool CheckForBoxCollision(Entity const& item) const;
+    bool CheckForBoxCollision(Entity & item) const;
 
 	std::unordered_map<EntityID, Entity> _itemMap{};
     bool _isMapDirty = false;

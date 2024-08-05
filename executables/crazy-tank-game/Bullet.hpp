@@ -16,6 +16,7 @@ public:
 		float radius = 0.25f;				// Bullet radius
 		float friendlyFireDelay = 0.5f;		// Bullet won't hit the owner before this duration 
 		float lifeTime = 10.0f;
+		int maxBounceCount = 10;
 	};
 
 	explicit Bullet(
@@ -49,5 +50,6 @@ private:
 	bool _isAlive = true;
 
 	float _lifeTime = 0.0f;
+	int _remainingBounceCount = 0;
 
 };
