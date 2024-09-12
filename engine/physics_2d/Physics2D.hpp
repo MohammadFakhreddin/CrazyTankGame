@@ -187,7 +187,6 @@ private:
     [[nodiscard]]
     static glm::vec2 OrthogonalDirection(glm::vec2 const& v0, glm::vec2 const& v1, glm::vec2 const& center);
 
-    [[nodiscard]]
     static void OrthogonalDirection(
         bool & inOutIsDirty, 
         glm::vec2 & inOutNormal, 

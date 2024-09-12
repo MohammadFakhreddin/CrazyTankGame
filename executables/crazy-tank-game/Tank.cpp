@@ -28,16 +28,7 @@ Tank::Tank(
 
 	_shootTransform = &_meshInstance->FindNode("Shoot")->transform;
 
-	{
-		auto const position2d = _transform->GetLocalPosition().xz();
-		auto const canMove = Physics2D::Instance->MoveAABB(
-			_physicsId,
-			position2d - _params->halfColliderExtent,
-			position2d + _params->halfColliderExtent,
-			false
-		);
-		MFA_ASSERT(canMove == true);
-	}
+	Teleport(_transform->GetLocalPosition().xz());
 
 	_isAlive == true;
 }
@@ -63,7 +54,7 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 
 	static constexpr float epsilon = 1e-2f;
 
-	// TODO: Move this code to physics and rename the teleport		
+	// TODO: Move this code to physics	
 	auto const moveVector = glm::vec3{direction.x, 0.0, direction.y} * deltaTimeSec * _params->moveSpeed;
 		
 	{// Position
@@ -176,6 +167,23 @@ bool Tank::Move(glm::vec2 const & direction, float const deltaTimeSec)
 	}
 
 	return success;
+}
+
+//==================================================================
+
+void Tank::Teleport(glm::vec2 const & pos2d)
+{
+	glm::vec3 pos3d = _transform->GetLocalPosition();
+	pos3d.x = pos2d.x;
+	pos3d.z = pos2d.y;
+	_transform->SetLocalPosition(pos3d);
+	auto const canMove = Physics2D::Instance->MoveAABB(
+		_physicsId,
+		pos2d - _params->halfColliderExtent,
+		pos2d + _params->halfColliderExtent,
+		false
+	);
+	MFA_ASSERT(canMove == true);
 }
 
 //==================================================================

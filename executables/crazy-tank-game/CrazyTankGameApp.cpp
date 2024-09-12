@@ -126,8 +126,9 @@ CrazyTankGameApp::CrazyTankGameApp()
 
 	physics2D = std::make_unique<Physics2D>(pointRenderer, lineRenderer);
 	
-
 	InitMap();
+
+	InitPathFinder();
 
 	auto const tankModel = Importer::GLTF_Model(Path::Instance->Get("models/enemy_tank.glb"));
 
@@ -143,6 +144,8 @@ CrazyTankGameApp::CrazyTankGameApp()
 		playerTankParams = std::make_unique<Tank::Params>();
 		playerTank = std::make_unique<Tank>(*playerTankRenderer, playerTankParams);
 		playerTank->Transform().SetLocalScale(glm::vec3{0.25f, 0.25f, 0.25f});
+		MFA_ASSERT(playerSpawnPositions.empty() == false);
+		playerTank->Teleport(pathFinder->NodePosition(playerSpawnPositions[0]).xz());
 	}
 
 	{
@@ -168,9 +171,6 @@ CrazyTankGameApp::CrazyTankGameApp()
 		debugCamera->SetnearPlane(0.010f);
 	}
 
-	InitPathFinder();
-
-	// TODO: We need a spawn position for the enemies
 	enemyTankRenderer = std::make_unique<MeshRenderer>(
 		shadingPipeline,
 		tankModel,
@@ -179,15 +179,14 @@ CrazyTankGameApp::CrazyTankGameApp()
 		glm::vec4{252.0f / 255.0f, 69.0f / 255.0f, 3.0f / 255.0f, 1.0f}
 	);
 
-	// TODO: Write a player and enemy behaviour class
-	{
-		// TODO: Use spawn positions
+	{// Enemy params
 		auto const node0Position = pathFinder->NodePosition(0);
 		enemyTankParams = std::make_unique<Tank::Params>();
 		enemyTanks.emplace_back(std::make_unique<Tank>(*enemyTankRenderer, enemyTankParams));
 		auto & enemyTransform = enemyTanks.back()->Transform();
 		enemyTransform.SetLocalScale(glm::vec3{0.25f, 0.25f, 0.25f});
-		enemyTransform.SetLocalPosition(node0Position);
+		MFA_ASSERT(enemySpawnPositions.empty() == false);
+		enemyTanks.back()->Teleport(pathFinder->NodePosition(enemySpawnPositions[0]).xz());
 	}
 
 }
@@ -319,16 +318,19 @@ void CrazyTankGameApp::Render(RT::CommandRecordState& recordState)
 
 	displayRenderPass->Begin(recordState);
 	
-	// Rendering player tank
-	playerTankRenderer->Render(recordState, {playerTank->MeshInstance()});
-	
-	{// Rendering enemy tank
-		std::vector<MeshInstance *> instances{};
-		for (auto & enemyTank : enemyTanks)
-		{	
-			instances.emplace_back(enemyTank->MeshInstance());
+	if (renderPlayer == true)
+	{
+		// Rendering player tank
+		playerTankRenderer->Render(recordState, {playerTank->MeshInstance()});
+		
+		{// Rendering enemy tank
+			std::vector<MeshInstance *> instances{};
+			for (auto & enemyTank : enemyTanks)
+			{	
+				instances.emplace_back(enemyTank->MeshInstance());
+			}
+			enemyTankRenderer->Render(recordState, instances);
 		}
-		enemyTankRenderer->Render(recordState, instances);
 	}
 
 	{// Rendering bullets
@@ -576,21 +578,25 @@ void CrazyTankGameApp::InitMap()
 	// TODO: Map needs to generated randomly every time with a limited number of walls
 	// TODO: Write a map generator
 	// TODO: We need something for the spawn points and for the enemies
+	// TODO: I can also place enemies manually
 	std::vector<int> walls{
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 		1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -598,10 +604,10 @@ void CrazyTankGameApp::InitMap()
 		1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1,
 		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	};
-	int rows = 20;
+	int rows = 23;
 	int columns = 20;
 
-	map = std::make_unique<Map>(40, 40, 20, 20, walls, shadingPipeline, errorTexture);
+	map = std::make_unique<Map>(40, 40, rows, columns, walls, shadingPipeline, errorTexture);
 
 }
 
@@ -609,63 +615,214 @@ void CrazyTankGameApp::InitMap()
 
 void CrazyTankGameApp::InitPathFinder()
 {
+	// TODO: 
+
 	auto const rows = map->GetRows();
 	auto const columns = map->GetColumns();
 	auto const & walls = map->GetWalls();
 
 	pathFinder = std::make_unique<PathFinder>();
 	
+#ifdef MFA_DEBUG
 	std::string idMap = "";
+#endif
+
 	std::vector<PathFinder::NodeId> nodes{};
+
+	playerSpawnPositions.clear();
+	enemySpawnPositions.clear();
+
 	for (int j = 0; j < rows; ++j)
 	{
 		for (int i = 0; i < columns; ++i)
 		{
-			if (walls[j * columns + i] != 1)
+			int value = walls[j * columns + i];
+			if (value != WallCode)
 			{
 				auto const position = map->CalcPosition(j, i);
 				nodes.emplace_back(pathFinder->AddNode(position));
+			#ifdef MFA_DEBUG
 				idMap += "=" + std::to_string(nodes.back()) + "=";
+			#endif
+				if (value == EnemySpawnCode) // Enemy spawn positions
+				{
+					enemySpawnPositions.emplace_back(nodes.back());
+				}
+				else if (value == PlayerSpawnCode)
+				{
+					playerSpawnPositions.emplace_back(nodes.back());
+				}
 			}
 			else
 			{
 				nodes.emplace_back(PathFinder::InvalidNode);
+			#ifdef MFA_DEBUG
 				idMap += "=" + std::to_string(nodes.back()) + "=";
+			#endif
 			}
 		}
 		idMap += "\n";
 	}
+#ifdef MFA_DEBUG
 	MFA_LOG_INFO("Id map is\n%s", idMap.c_str());
+#endif
+
+	auto gridSize = rows * columns;
+
+	auto const CanGoToIdx = [this, &walls, gridSize](int idx)->bool
+	{
+		return idx >= 0 && idx < gridSize && walls[idx] != WallCode;
+	};
+
+	auto const HasWallNeighbour = [this, &walls, &columns, &CanGoToIdx](int idx)->float
+	{
+		int score = 0;
+		{
+			auto const rightIdx = idx + 1;
+			if (CanGoToIdx(rightIdx) == false)
+			{
+				++score;
+			}
+		}
+		
+		{
+			auto const leftIdx = idx - 1;
+			if (CanGoToIdx(leftIdx) == false)
+			{
+				++score;
+			}
+		}
+
+		auto const upIdx = idx + columns;	
+		{
+			if (CanGoToIdx(upIdx) == false)
+			{
+				++score;
+			}
+		}
+
+		{
+			auto const upRightIdx = upIdx + 1;
+			if (CanGoToIdx(upRightIdx) == false)
+			{
+				score += 0.25f;
+				// ++score;
+			}
+		}
+
+		{
+			auto const upLeftIdx = upIdx - 1;
+			if (CanGoToIdx(upLeftIdx) == false)
+			{
+				score += 0.25f;
+				// ++score;
+			}
+		}
+
+		auto const downIdx = idx - columns;
+		{
+			if (CanGoToIdx(downIdx) == false)
+			{
+				++score;
+			}
+		}
+
+		{
+			auto const downRightIdx = downIdx + 1;
+			if (CanGoToIdx(downRightIdx) == false)
+			{
+				score += 0.25f;
+				// ++score;
+			}
+		}
+
+		{
+			auto const downLeftIdx = downIdx - 1;
+			if (CanGoToIdx(downLeftIdx) == false)
+			{
+				score += 0.25f;
+				// ++score;
+			}
+		}
+		
+		return score;
+	};
+
+	std::vector<float> wallNeighbourMap(nodes.size());		// Indicates whether you have a neighbour that is a wall
+	for (int j = 0; j < rows; ++j)
+	{
+		for (int i = 0; i < columns; ++i)
+		{
+			auto myIdx = j * columns + i;
+			wallNeighbourMap[myIdx] = HasWallNeighbour(myIdx);
+		}
+	}
+
+	auto const AddEdge = [this, &walls, &wallNeighbourMap, &nodes](int myIdx, int otherIdx)->void
+	{
+		auto const myID = nodes[myIdx];
+		auto const otherID = nodes[otherIdx];
+
+		auto const myPos = pathFinder->NodePosition(myID);
+		auto const otherPos = pathFinder->NodePosition(otherID);
+		auto const edgeLen = glm::length(myPos - otherPos);
+		auto distance = edgeLen;
+		
+		// To discourage the AI from using these paths
+		distance += edgeLen * (float)wallNeighbourMap[myIdx];
+		distance += edgeLen * (float)wallNeighbourMap[otherIdx];
+		
+		auto const addResult = pathFinder->AddEdge(myID, otherID, distance);
+		MFA_ASSERT(addResult == true);
+	};
 
 	for (int j = 0; j < rows; ++j)
 	{
 		for (int i = 0; i < columns; ++i)
 		{
 			auto myIdx = j * columns + i;
-			if (walls[myIdx] != 1)
+			// Note: Because of the walls around the level we do not get out of range exception but it should be considered as well
+			if (walls[myIdx] != WallCode)
 			{
-				auto myID = nodes[myIdx]; 
-
-				auto rightIdx = (j * columns) + i + 1;
-				if (walls[rightIdx] != 1)
+				// Right
+				auto const rightIdx = myIdx + 1;
+				auto const canGoRight = CanGoToIdx(rightIdx);
+				if (canGoRight == true)
 				{
-					auto const addResult = pathFinder->AddEdge(myID, nodes[rightIdx]);
-					MFA_ASSERT(addResult == true);
+					AddEdge(myIdx, rightIdx);
 				}
 
-				auto forwardIdx = ((j + 1) * columns) + i;
-				if (walls[forwardIdx] != 1)
+				// Left
+				auto const leftIdx = myIdx - 1;
+				auto const canGoLeft = CanGoToIdx(leftIdx);
+				
+				// Up
+				auto const upIdx = myIdx + columns;
+				auto const canGoUp = CanGoToIdx(upIdx);
+				if (canGoUp == true)
 				{
-					auto const addResult = pathFinder->AddEdge(myID, nodes[forwardIdx]);
-					MFA_ASSERT(addResult == true);
+					AddEdge(myIdx, upIdx);
 				}
 
-				auto forwardRightIdx = ((j + 1) * columns) + i + 1;
-				if (walls[rightIdx] != 1 && walls[forwardIdx] != 1 && walls[forwardRightIdx] != 1)
-				{
-					auto const addResult = pathFinder->AddEdge(myID, nodes[forwardRightIdx]);
-					MFA_ASSERT(addResult == true);
+				{// Up right
+					auto const upRightIdx = upIdx + 1;
+					auto const canGoUpRight = CanGoToIdx(upRightIdx);
+					if (canGoUpRight == true && canGoUp == true && canGoRight == true)
+					{
+						AddEdge(myIdx, upRightIdx);
+					}
 				}
+
+				{// Up left
+					auto const upLeftIdx = upIdx - 1;
+					auto const canGoUpLeft = CanGoToIdx(upLeftIdx);
+					if (canGoUpLeft == true && canGoUp == true && canGoLeft == true)
+					{
+						AddEdge(myIdx, upLeftIdx);
+					}
+				}
+				
+
 			}
 		}
 	}

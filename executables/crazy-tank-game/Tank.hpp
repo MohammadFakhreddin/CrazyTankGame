@@ -28,6 +28,8 @@ public:
 
 	bool Move(glm::vec2 const & direction, float deltaTimeSec);
 
+	void Teleport(glm::vec2 const & pos2d);
+
 	[[nodiscard]]
 	std::unique_ptr<Bullet> Shoot(std::shared_ptr<Bullet::Params> params);
 

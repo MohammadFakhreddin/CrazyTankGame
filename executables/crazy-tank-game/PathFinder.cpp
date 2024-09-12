@@ -23,7 +23,7 @@ PathFinder::NodeId PathFinder::AddNode(Position const & position)
 
 //-------------------------------------------------------------------------------------------------
 
-bool PathFinder::AddEdge(NodeId const node1, NodeId const node2)
+bool PathFinder::AddEdge(NodeId const node1, NodeId const node2, float distance)
 {
 	if (node1 < 0 || node1 >= _nodesMap.size() ||
 		node2 < 0 || node2 >= _nodesMap.size() ||
@@ -36,11 +36,25 @@ bool PathFinder::AddEdge(NodeId const node1, NodeId const node2)
 	auto const & cell1 = _nodesMap[node1];
 	auto const & cell2 = _nodesMap[node2];
 
-	MFA_ASSERT(std::count(cell1->neighbors.begin(), cell1->neighbors.end(), node1) == 0);
-	cell1->neighbors.emplace_back(node2);
+#ifdef MFA_DEBUG
+	for (auto const & [node, distance] : cell1->neighbors)
+	{
+		if (node == node2)
+		{
+			MFA_ASSERT(false);
+		}
+	}
+	for (auto const & [node, distance] : cell2->neighbors)
+	{
+		if (node == node1)
+		{
+			MFA_ASSERT(false);
+		}
+	}
+#endif
 
-	MFA_ASSERT(std::count(cell2->neighbors.begin(), cell2->neighbors.end(), node2) == 0);
-	cell2->neighbors.emplace_back(node1);
+	cell1->neighbors.emplace_back(std::pair{node2, distance});
+	cell2->neighbors.emplace_back(std::pair{node1, distance});
 
 	return true;
 }
@@ -98,9 +112,9 @@ void PathFinder::CachePaths()
 		std::set<NodeId> traversedNodes{myNode->id};
 		{
 			std::set<NodeId> selectedNodes{};
-			for (auto const & otherNodeId : myNode->neighbors)
+			for (auto const & [otherNodeId, distance] : myNode->neighbors)
 			{
-				myDistanceField[otherNodeId] = glm::length(myNode->position - _nodesMap[otherNodeId]->position);
+				myDistanceField[otherNodeId] = distance;
 				selectedNodes.emplace(otherNodeId);
 			}
 			traversedNodes = selectedNodes;
@@ -112,9 +126,9 @@ void PathFinder::CachePaths()
 				{
 					auto const distanceSoFar = myDistanceField[selectedNodeId];
 					auto const & selectedNode = _nodesMap[selectedNodeId];
-					for (auto const & otherNodeId : selectedNode->neighbors)
+					for (auto const & [otherNodeId, distance] : selectedNode->neighbors)
 					{
-						auto const newDistance = glm::length(selectedNode->position - _nodesMap[otherNodeId]->position) + distanceSoFar;
+						auto const newDistance = distance + distanceSoFar;
 						auto & currentDistance = myDistanceField[otherNodeId];
 						if (currentDistance > newDistance || currentDistance == -1.0f)
 						{
@@ -165,12 +179,12 @@ std::tuple<bool, PathFinder::NodeId> PathFinder::FindNextNode(NodeId startNodeID
 		return std::tuple {false, InvalidNode};
 	}
 
-	NodeId bestNode = startNode->neighbors[0];
+	NodeId bestNode = startNode->neighbors[0].first;
 	auto bestDistance = distanceField[bestNode];
 	
 	for (int i = 1; i < startNode->neighbors.size(); ++i)
 	{
-		auto const neighbour = startNode->neighbors[i];
+		auto const & [neighbour, edgeLength] = startNode->neighbors[i];
 		auto distance = distanceField[neighbour];
 
 		if (distance >= 0.0f && (distance < bestDistance || bestDistance < 0.0f))
@@ -184,84 +198,3 @@ std::tuple<bool, PathFinder::NodeId> PathFinder::FindNextNode(NodeId startNodeID
 }
 
 //-------------------------------------------------------------------------------------------------
-
-/*
-std::tuple<bool, PathFinder::NodeId> PathFinder::FindNextNode(
-	NodeId startNodeID, 
-	NodeId targetNodeID, 
-	std::set<NodeId> & blockedNodes
-)
-{
-	if (startNodeID == targetNodeID)
-	{
-		return std::tuple {true, targetNodeID};
-	}
-
-	auto const & startNode = _nodesMap[startNodeID];
-	auto const & targetNode = _nodesMap[targetNodeID];	
-
-	blockedNodes.emplace(startNodeID);
-
-	std::vector<std::pair<Node *, float>> sortedNeighbors{};
-
-	for (auto const & neighbourID : targetNode->neighbors)
-	{
-		if (neighbourID == targetNodeID)
-		{
-			return neighbourID;
-		}
-		
-		auto const & neighbour = _nodesMap[neighbourID];
-		if (blockedNodes.contains(neighbourID) == false)
-		{
-			auto const score = CalculateHeuristicDistance(
-				startNode->position, 
-				neighbour->position, 
-				targetNode->position
-			);
-			
-			bool inserted = false;
-			for (int i = 0; i < sortedNeighbors.size(); ++i)
-			{
-				if (sortedNeighbors[i].second > score)
-				{
-					sortedNeighbors.insert(sortedNeighbors.begin() + i, std::pair{neighbour.get(), score});
-					inserted = true;
-					break;
-				}
-			}
-			if (inserted == false)
-			{
-				sortedNeighbors.emplace_back(std::pair{neighbour.get(), score});
-			}
-		}
-	}
-
-	for (int i = 0; i < sortedNeighbors.size(); ++i)
-	{
-		FindNextNode	
-	}
-
-	blockedNodes.erase(startNodeID);
-}
-
-//-------------------------------------------------------------------------------------------------
-
-std::vector<PathFinder::NodeId> PathFinder::FindPath(NodeId startNodeID, NodeId targetNodeID)
-{
-	// TODO
-}
-
-//-------------------------------------------------------------------------------------------------
-
-float PathFinder::CalculateHeuristicDistance(
-	Position const & start, 
-	Position const & neighbor, 
-	Position const & target
-)
-{
-	return glm::length(target - neighbor) + glm::length(neighbor - start);
-}
-
-//-------------------------------------------------------------------------------------------------
-*/

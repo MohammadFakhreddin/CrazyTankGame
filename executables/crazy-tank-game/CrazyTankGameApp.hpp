@@ -61,6 +61,11 @@ private:
     void UpdatePlayer(float deltaTimeSec);
 
     void UpdateEnemies(float deltaTimeSec);
+    
+    static constexpr int EmptyCode = 0;
+	static constexpr int WallCode = 1;
+	static constexpr int EnemySpawnCode = 2;
+	static constexpr int PlayerSpawnCode = 3;
 
     // Render parameters
 	std::unique_ptr<MFA::Path> path{};
@@ -132,5 +137,8 @@ private:
     };
     
     std::unique_ptr<PathFinder> pathFinder{};
+
+    std::vector<PathFinder::NodeId> enemySpawnPositions{};
+    std::vector<PathFinder::NodeId> playerSpawnPositions{};
 
 };

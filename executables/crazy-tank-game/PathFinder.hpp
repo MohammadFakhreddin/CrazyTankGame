@@ -20,7 +20,7 @@ public:
     {
         NodeId id{};
         Position position{};
-        std::vector<NodeId> neighbors{};
+        std::vector<std::pair<NodeId, float>> neighbors{};
     };
 
     // We use position for heuristics
@@ -28,7 +28,7 @@ public:
     NodeId AddNode(Position const & position);
 
     // In the current implementation the edges do not have any cost on their own
-    bool AddEdge(NodeId node1, NodeId node2);
+    bool AddEdge(NodeId node1, NodeId node2, float distance);
 
     [[nodiscard]]
     NodeId FindNearestNode(Position const & myPosition);//, NodeId previousNode = -1);
