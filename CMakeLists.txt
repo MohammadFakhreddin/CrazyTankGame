@@ -98,6 +98,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/engine/libs/libconfig/tiny_gltf
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/SDL2")
 include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2/include")
+include_directories("${CMAKE_SOURCE_DIR}/submodules/SDL2_mixer/include")
 
 ## SDL2_mixer ############################################
 
